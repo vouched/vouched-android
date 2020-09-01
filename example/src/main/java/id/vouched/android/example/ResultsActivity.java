@@ -1,0 +1,142 @@
+package id.vouched.android.example;
+
+import android.content.Intent;
+import android.os.Bundle;
+import android.util.TypedValue;
+import android.widget.ImageView;
+import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.util.ArrayList;
+
+import id.vouched.android.model.Job;
+import id.vouched.android.model.JobResult;
+
+public class ResultsActivity extends AppCompatActivity {
+    String resultName = "";
+    boolean resultSuccess = false;
+    float resultFaceMatch = 0f;
+    float resultIdQuality = 0f;
+    float resultNameMatch = 0f;
+    ArrayList<String> arr = new ArrayList<String>();
+    Job job;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_results);
+
+        Intent i = getIntent();
+        job = Job.fromJson(i.getStringExtra("Job"));
+        populateJob(job);
+    }
+
+    protected void populateJob(Job job) {
+        JobResult jobResult = job.getResult();
+        resultSuccess = jobResult.getSuccess();
+
+        if (jobResult.getFirstName() != null && jobResult.getLastName() != null)
+            resultName = jobResult.getFirstName() + " " + jobResult.getLastName();
+        if (jobResult.getConfidences().getFaceMatch() != 0)
+            resultFaceMatch = jobResult.getConfidences().getFaceMatch();
+        if (jobResult.getConfidences().getIdQuality() != 0)
+            resultIdQuality = jobResult.getConfidences().getIdQuality();
+        if (job.getResult().getConfidences().getNameMatch() != 0)
+            resultNameMatch = jobResult.getConfidences().getNameMatch();
+        populateArray();
+    }
+
+    protected void populateArray() {
+        if (resultSuccess) {
+            arr.add("true");
+            arr.add("true");
+            arr.add("true");
+        } else {
+            arr.add("false");
+            arr.add("false");
+            arr.add("false");
+        }
+        arr.add(resultName);
+        arr.add(Float.toString(resultFaceMatch));
+        arr.add(Float.toString(resultIdQuality));
+
+        populateTable();
+    }
+
+    protected void populateTable() {
+        TextView textView_1 = (TextView) findViewById(R.id.textView_1);
+        ImageView imageView_1 = (ImageView) findViewById(R.id.imageView_1);
+        String output_1 = "Valid ID - " + arr.get(0);
+        textView_1.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView_1.setText(output_1);
+
+        if (Boolean.parseBoolean(arr.get(0))) {
+            imageView_1.setImageResource(R.drawable.check);
+        } else {
+            imageView_1.setImageResource(R.drawable.x);
+        }
+
+        TextView textView_2 = (TextView) findViewById(R.id.textView_2);
+        ImageView imageView_2 = (ImageView) findViewById(R.id.imageView_2);
+        String output_2 = "Valid Selfie - " + arr.get(1);
+        textView_2.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView_2.setText(output_2);
+
+        if (Boolean.parseBoolean(arr.get(1))) {
+            imageView_2.setImageResource(R.drawable.check);
+        } else {
+            imageView_2.setImageResource(R.drawable.x);
+        }
+
+        TextView textView_3 = (TextView) findViewById(R.id.textView_3);
+        ImageView imageView_3 = (ImageView) findViewById(R.id.imageView_3);
+        String output_3 = "Valid Match - " + arr.get(2);
+        textView_3.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView_3.setText(output_3);
+
+        if (Boolean.parseBoolean(arr.get(2))) {
+            imageView_3.setImageResource(R.drawable.check);
+        } else {
+            imageView_3.setImageResource(R.drawable.x);
+        }
+
+        TextView textView_4 = (TextView) findViewById(R.id.textView_4);
+        ImageView imageView_4 = (ImageView) findViewById(R.id.imageView_4);
+        String output_4 = "Name - " + arr.get(3);
+        textView_4.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView_4.setText(output_4);
+
+        if (resultNameMatch > 0.8) {
+            imageView_4.setImageResource(R.drawable.check);
+        } else {
+            imageView_4.setImageResource(R.drawable.x);
+        }
+
+        TextView textView_5 = (TextView) findViewById(R.id.textView_5);
+        ImageView imageView_5 = (ImageView) findViewById(R.id.imageView_5);
+        String output_5 = "Face Match Result - " + arr.get(4);
+        textView_5.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView_5.setText(output_5);
+
+        if (resultFaceMatch > 0.7) {
+            imageView_5.setImageResource(R.drawable.check);
+        } else {
+            imageView_5.setImageResource(R.drawable.x);
+        }
+
+        TextView textView_6 = (TextView) findViewById(R.id.textView_6);
+        ImageView imageView_6 = (ImageView) findViewById(R.id.imageView_6);
+        String output_6 = "Id Quality Result - " + arr.get(5);
+        textView_6.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        textView_6.setText(output_6);
+        if (resultIdQuality > 0.4) {
+            imageView_6.setImageResource(R.drawable.check);
+        } else {
+            imageView_6.setImageResource(R.drawable.x);
+        }
+
+    }
+
+
+}

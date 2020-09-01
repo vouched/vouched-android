@@ -1,0 +1,19 @@
+*.iml
+.gradle
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+
+# assets and library files
+example/libs/
+example/src/main/assets/
+example/src/main/jniLibs/
+
+# private build files
+example/gradle.properties
+

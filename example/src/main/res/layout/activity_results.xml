@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="id.vouched.example.ResultsActivity">
+
+    <TableLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingLeft="50dp"
+        android:paddingTop="130dp"
+        android:paddingRight="50dp"
+        android:paddingBottom="50dp"
+        android:stretchColumns="1"
+
+        >
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/textView_1"
+                android:layout_column="1"
+                android:padding="10dip"
+                android:text="Valid ID - " />
+
+            <ImageView
+                android:id="@+id/imageView_1"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="right"
+                android:padding="10dip" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/textView_2"
+                android:layout_column="1"
+                android:padding="10dip"
+                android:text="Valid ID - " />
+
+            <ImageView
+                android:id="@+id/imageView_2"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="right"
+                android:padding="10dip" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/textView_3"
+                android:layout_column="1"
+                android:padding="10dip"
+                android:text="Valid ID - " />
+
+            <ImageView
+                android:id="@+id/imageView_3"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="right"
+                android:padding="10dip" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/textView_4"
+                android:layout_column="1"
+                android:padding="10dip"
+                android:text="Valid ID - " />
+
+            <ImageView
+                android:id="@+id/imageView_4"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="right"
+                android:padding="10dip" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/textView_5"
+                android:layout_column="1"
+                android:padding="10dip"
+                android:text="Valid ID - " />
+
+            <ImageView
+                android:id="@+id/imageView_5"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="right"
+                android:padding="10dip" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:id="@+id/textView_6"
+                android:layout_column="1"
+                android:padding="10dip"
+                android:text="Valid ID - " />
+
+            <ImageView
+                android:id="@+id/imageView_6"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:gravity="right"
+                android:padding="10dip" />
+        </TableRow>
+
+
+    </TableLayout>
+</RelativeLayout>
