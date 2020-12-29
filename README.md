@@ -197,7 +197,7 @@ note: `"` is required for strings
 ## Assets and Library Files
 Get assets and library files from your Vouched representative
 - copy *libs/* directory to */example*
-- copy *assets/* and *jniLibs/* directores to */vouched/src/main/*
+- copy *assets/* and *jniLibs/* directores to */example/src/main/*
 
 ## License
 
