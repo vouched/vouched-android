@@ -13,8 +13,13 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import id.vouched.android.FaceDetect;
 import id.vouched.android.OnFaceDetectListener;
@@ -29,14 +34,17 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
     private HandlerThread handlerThread;
     private FaceDetect faceDetect;
     public SurfaceView previewDisplayView;
+    private RequestQueue mQueue;
     public VouchedSession session;
     private boolean posted = false;
     private boolean retake = false;
+    private boolean waitingOnVouched = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_face);
+        mQueue = Volley.newRequestQueue(this);
         previewDisplayView = new SurfaceView(this);
         previewDisplayView.setVisibility(View.GONE);
         ViewGroup viewGroup = findViewById(R.id.preview_display_layout);
@@ -79,9 +87,13 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
         faceDetect.startCamera(previewDisplayView);
     }
 
+    public void stopCamera() {
+        faceDetect.stopCamera();
+    }
+
     @Override
     public void onFaceDetected(List multiFaceLandmarks) {
-        if (multiFaceLandmarks.isEmpty()) {
+        if (multiFaceLandmarks.isEmpty() || waitingOnVouched) {
             return;
         }
         System.out.println("Number of faces detected: " + multiFaceLandmarks.size() + "\n");
@@ -167,9 +179,32 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
                 TextView textView = (TextView) findViewById(R.id.FaceDetInstructions);
                 textView.setText("PROCESSING IMAGE");
                 try {
+                    waitingOnVouched = true;
                     session.postFace(FaceDetectorActivity.this, image, new Params.Builder(), (response) -> {
-                        if (response.getException() != null) {
-                            System.out.println(response.getException());
+                        // After session call, clear/clean FaceDetect state
+                        faceDetect.reset();
+
+                        if (response.getError() != null) {
+                            System.out.println(response.getError().getClass().getName() + ": " + response.getError().getMessage());
+                            textView.setTextSize(20);
+                            textView.setText("ERROR PROCESSING");
+
+                            Timer timer = new Timer();
+                            timer.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            posted = false;
+                                            retake = true;
+                                            waitingOnVouched = false;
+                                            startCamera();
+                                        }
+                                    });
+                                }
+                            }, 2000);
+
                             return;
                         }
 

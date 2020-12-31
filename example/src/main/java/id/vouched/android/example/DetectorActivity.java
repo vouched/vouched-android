@@ -59,11 +59,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 
+import id.vouched.android.example.BuildConfig;
 import id.vouched.android.CardDetect;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
@@ -145,6 +145,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
     private CameraConnectionFragment camera;
     private boolean posted = false;
+    private boolean waitingOnVouched = false;
 
     protected void onCreate(final Bundle savedInstanceState) {
         session = new VouchedSession(SessionType.idVerificationWithFace, BuildConfig.API_KEY, BuildConfig.API_URL);
@@ -507,6 +508,8 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
     @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onImageAvailable(final ImageReader reader) {
+        if (waitingOnVouched) return;
+
         // We need wait until we have some size from onPreviewSizeChosen
         if (previewWidth == 0 || previewHeight == 0) {
             return;
@@ -581,14 +584,41 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
     protected void processingImage(String image, Camera oldCamera) {
         System.out.println("processingImage");
 
+        Runnable resumeCamera = new Runnable() {
+            public void run() {
+                waitingOnVouched = false;
+                posted = false;
+                if (oldCamera == null) {
+                    camera.onResume();
+                } else {
+                    oldCamera.startPreview();
+                }
+            }
+        };
+
         Consumer<JobResponse> callback = response -> {
-            if (response.getException() != null) {
-                System.out.println(response.getException());
+            // After session call, clear/clean CardDetect state
+            cardDetect.reset();
+
+            if (response.getError() != null) {
+                System.out.println(response.getError().getClass().getName() + ": " + response.getError().getMessage());
+                TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
+                textView.setTextSize(20);
+                textView.setText("ERROR PROCESSING");
+
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(resumeCamera);
+                    }
+                }, 2000);
                 return;
             }
 
+            System.out.println("Callback");
             System.out.println(response);
-            List<RetryableError> retryableErrors = VouchedUtils.extractRetryableErrors(response.getJob());
+            ArrayList<RetryableError> retryableErrors = VouchedUtils.extractRetryableErrors(response.getJob());
 
             if (retryableErrors.size() != 0) {
                 System.out.println("Inside OnError - " + retryableErrors.size());
@@ -599,17 +629,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        runOnUiThread(new Runnable() {
-                            public void run() {
-                                if (oldCamera == null) {
-                                    camera.onResume();
-                                    posted = false;
-                                } else {
-                                    oldCamera.startPreview();
-                                    posted = false;
-                                }
-                            }
-                        });
+                        runOnUiThread(resumeCamera);
                     }
                 }, 5000);
             } else {
@@ -626,6 +646,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                 }
             }
         };
+
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -642,12 +663,9 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                     inputLastName = bundle.get("lastName") + "";
                 }
 
-                try {
-                    System.out.println("Before - Get Job Back from postFrontId");
-                    session.postFrontId(DetectorActivity.this, image, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), callback);
-                } catch (Exception e) {
-
-                }
+                System.out.println("Before - Get Job Back from postFrontId");
+                waitingOnVouched = true;
+                session.postFrontId(DetectorActivity.this, image, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), callback);
                 if (oldCamera == null) {
                     camera.onPause();
                 } else {
@@ -731,7 +749,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
      */
     @Override
     public void onPreviewFrame(final byte[] bytes, final Camera camera) {
-        if (isProcessingFrame) {
+        if (isProcessingFrame || waitingOnVouched) {
             return;
         }
 

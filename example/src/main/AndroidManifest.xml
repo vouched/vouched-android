@@ -21,7 +21,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection">
-        <activity android:name=".ResultsActivity" />
+        <activity android:name="id.vouched.android.example.ResultsActivity" />
         <activity android:name="id.vouched.android.example.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -30,11 +30,11 @@
             </intent-filter>
 
         </activity>
-        <activity android:name=".NameInputActivity" />
+        <activity android:name="id.vouched.android.example.NameInputActivity" />
         <activity
             android:name="id.vouched.android.example.FaceDetectorActivity"
             android:exported="true"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"></activity>
         <activity
             android:name="id.vouched.android.example.DetectorActivity"
             android:label="@string/vouched_app_name"
