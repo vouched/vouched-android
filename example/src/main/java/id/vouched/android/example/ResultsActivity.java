@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
 
+import id.vouched.android.VouchedSession;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResult;
 
@@ -20,7 +21,6 @@ public class ResultsActivity extends AppCompatActivity {
     float resultIdQuality = 0f;
     float resultNameMatch = 0f;
     ArrayList<String> arr = new ArrayList<String>();
-    Job job;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,8 +28,17 @@ public class ResultsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_results);
 
         Intent i = getIntent();
-        job = Job.fromJson(i.getStringExtra("Job"));
-        populateJob(job);
+        VouchedSession session = (VouchedSession) i.getSerializableExtra("Session");
+        if (session != null) {
+            session.confirm(this, null, jobResponse -> {
+                Job job = jobResponse.getJob();
+                if (job != null) {
+                    populateJob(job);
+                } else {
+                    System.out.println(jobResponse.getError().getMessage());
+                }
+            });
+        }
     }
 
     protected void populateJob(Job job) {

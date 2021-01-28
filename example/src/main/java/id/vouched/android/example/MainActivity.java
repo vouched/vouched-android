@@ -17,7 +17,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        VouchedLogger.configure(VouchedLogger.Mode.ON);
+        VouchedLogger.configure(VouchedLogger.Mode.OFF);
 
         button = findViewById(R.id.button2);
         button.setOnClickListener(new View.OnClickListener() {

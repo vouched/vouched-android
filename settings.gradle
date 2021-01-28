@@ -1,2 +1,2 @@
 include ':example'
-rootProject.name = "vouched-android-example-private"
+rootProject.name = "vouched-android-example"

@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -24,9 +25,11 @@ import java.util.TimerTask;
 import id.vouched.android.FaceDetect;
 import id.vouched.android.OnFaceDetectListener;
 import id.vouched.android.VouchedSession;
+import id.vouched.android.VouchedUtils;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobError;
 import id.vouched.android.model.Params;
+import id.vouched.android.model.RetryableError;
 
 
 public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDetectListener {
@@ -153,23 +156,6 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
     }
 
 
-    protected ArrayList<JobError> extractRetryableErrors(Job job) {
-        ArrayList<JobError> resError = new ArrayList<JobError>();
-
-        if (job != null && job.getResult() != null) {
-            if (job.getResult().getConfidences().getSelfieQuality() < 0.9) {
-                resError.add(new JobError("PoorSelfieQuality"));
-            }
-            for (int i = 0; i < job.getErrors().length; i++) {
-                String s = job.getErrors()[i].getType();
-                if (s.equals("InvalidUserPhotoError")) {
-                    resError.add(new JobError(s));
-                }
-            }
-        }
-        return resError;
-    }
-
     protected void processingImage(String image) {
         System.out.println("processingImage");
 
@@ -210,7 +196,7 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
 
                         System.out.println("Callback");
                         System.out.println(response);
-                        ArrayList<JobError> retryableErrors = extractRetryableErrors(response.getJob());
+                        List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(response.getJob());
 
                         if (retryableErrors.size() != 0) {
                             System.out.println("Inside OnError - " + retryableErrors.size());
@@ -220,7 +206,7 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
                         } else {
                             System.out.println(response);
                             Intent i = new Intent(FaceDetectorActivity.this, ResultsActivity.class);
-                            i.putExtra("Job", response.getJob().toJson());
+                            i.putExtra("Session", (Serializable) session);
                             startActivity(i);
                         }
                     });

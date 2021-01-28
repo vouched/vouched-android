@@ -24,7 +24,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
-import android.graphics.Matrix;
 import android.graphics.Typeface;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
@@ -40,31 +39,27 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Trace;
-import android.util.Base64;
 import android.util.Size;
 import android.util.TypedValue;
 import android.view.Surface;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.CompoundButton;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.Consumer;
 
-import id.vouched.android.example.BuildConfig;
 import id.vouched.android.CardDetect;
+import id.vouched.android.CardDetectResult;
+import id.vouched.android.Instruction;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
 import id.vouched.android.customview.OverlayView;
@@ -75,58 +70,30 @@ import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
 import id.vouched.android.model.SessionType;
-import id.vouched.android.tflite.Classifier;
-import id.vouched.android.tflite.TFLiteObjectDetectionAPIModel;
+import id.vouched.android.tracking.CardDetectOptions;
 import id.vouched.android.tracking.MultiBoxTracker;
 
 public class DetectorActivity extends AppCompatActivity implements OnImageAvailableListener,
         Camera.PreviewCallback,
-        CompoundButton.OnCheckedChangeListener,
-        View.OnClickListener {
+        CompoundButton.OnCheckedChangeListener {
 
-    // Configuration values for the prepackaged SSD model.
-    private static final int TF_OD_API_INPUT_SIZE = 320;
-    private static final boolean TF_OD_API_IS_QUANTIZED = false;
-    private static final String TF_OD_API_MODEL_FILE = "inference_graph.tflite";
-    private static final String TF_OD_API_LABELS_FILE = "file:///android_asset/labelmap_mobilenet_card.txt";
-    //  private static final DetectorMode MODE = DetectorMode.TF_OD_API;
-    // Minimum detection confidence to track a detection.
-    private static final float MINIMUM_CONFIDENCE_TF_OD_API = 0.6f;
-    private static final boolean MAINTAIN_ASPECT = false;
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(720, 480);
-    private static final boolean SAVE_PREVIEW_BITMAP = false;
+    private static final Size DESIRED_PREVIEW_SIZE = new Size(960, 720);
     private static final float TEXT_SIZE_DIP = 10;
 
-    private long timestamp = 0;
-
-    OverlayView trackingOverlay;
     private Integer sensorOrientation;
-
-    private Classifier detector;
-
-    private long lastProcessingTimeMs;
     private Bitmap rgbFrameBitmap = null;
-    private Bitmap croppedBitmap = null;
-    //  private Bitmap cropCopyBitmap = null;
-    private Bitmap rgbFrameBitmapJS = null;
 
     private boolean computingDetection = false;
-
-
-    private Matrix frameToCropTransform;
-    private Matrix frameToOrientationTransform;
-    private Matrix cropToFrameTransform;
-
     private MultiBoxTracker tracker;
+    private OverlayView trackingOverlay;
 
     private BorderedText borderedText;
 
     private static final int PERMISSIONS_REQUEST = 1;
-
     private static final String PERMISSION_CAMERA = Manifest.permission.CAMERA;
+
     protected int previewWidth = 0;
     protected int previewHeight = 0;
-    private boolean debug = false;
     private Handler handler;
     private HandlerThread handlerThread;
     private boolean useCamera2API;
@@ -138,26 +105,21 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
     private Runnable imageConverter;
 
     private CardDetect cardDetect;
-    protected boolean pause = false;
-
-    protected ProgressBar spinner;
     protected VouchedSession session;
 
     private CameraConnectionFragment camera;
     private boolean posted = false;
     private boolean waitingOnVouched = false;
+    private Camera oldCamera;
 
     protected void onCreate(final Bundle savedInstanceState) {
-        session = new VouchedSession(SessionType.idVerificationWithFace, BuildConfig.API_KEY, BuildConfig.API_URL);
-
+        super.onCreate(null);
         setContentView(R.layout.tfe_od_activity_camera);
 
-        super.onCreate(null);
-
-        cardDetect = new CardDetect();
+        session = new VouchedSession(SessionType.idVerificationWithFace, BuildConfig.API_KEY, BuildConfig.API_URL);
+        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), handleCardDetectResult());
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
 
         if (hasPermission()) {
             setFragment();
@@ -175,8 +137,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                             new CameraConnectionFragment.ConnectionCallback() {
                                 @Override
                                 public void onPreviewSizeChosen(final Size size, final int rotation) {
-                                    previewHeight = size.getHeight();
-                                    previewWidth = size.getWidth();
                                     DetectorActivity.this.onPreviewSizeChosen(size, rotation);
                                 }
                             },
@@ -191,19 +151,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                     new LegacyCameraConnectionFragment(this, getLayoutId(), getDesiredPreviewFrameSize());
         }
         getFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
-    }
-
-    private void requestPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA)) {
-                Toast.makeText(
-                        DetectorActivity.this,
-                        "Camera permission is required for this demo",
-                        Toast.LENGTH_LONG)
-                        .show();
-            }
-            requestPermissions(new String[]{PERMISSION_CAMERA}, PERMISSIONS_REQUEST);
-        }
     }
 
     //  @Override
@@ -263,6 +210,19 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
     protected synchronized void runInBackground(final Runnable r) {
         if (handler != null) {
             handler.post(r);
+        }
+    }
+
+    private void requestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (shouldShowRequestPermissionRationale(PERMISSION_CAMERA)) {
+                Toast.makeText(
+                        DetectorActivity.this,
+                        "Camera permission is required for this demo",
+                        Toast.LENGTH_LONG)
+                        .show();
+            }
+            requestPermissions(new String[]{PERMISSION_CAMERA}, PERMISSIONS_REQUEST);
         }
     }
 
@@ -342,16 +302,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
     }
 
     //  @Override
-    protected void setUseNNAPI(final boolean isChecked) {
-        runInBackground(() -> detector.setUseNNAPI(isChecked));
-    }
-
-    //  @Override
-    protected void setNumThreads(final int numThreads) {
-        runInBackground(() -> detector.setNumThreads(numThreads));
-    }
-
-    //  @Override
     public void onPreviewSizeChosen(final Size size, final int rotation) {
         final float textSizePx =
                 TypedValue.applyDimension(
@@ -361,41 +311,12 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
         tracker = new MultiBoxTracker(this);
 
-        int cropSize = TF_OD_API_INPUT_SIZE;
-
-        try {
-            detector =
-                    TFLiteObjectDetectionAPIModel.create(
-                            getAssets(),
-                            TF_OD_API_MODEL_FILE,
-                            TF_OD_API_LABELS_FILE,
-                            TF_OD_API_INPUT_SIZE,
-                            TF_OD_API_IS_QUANTIZED);
-            cropSize = TF_OD_API_INPUT_SIZE;
-        } catch (final IOException e) {
-            e.printStackTrace();
-            Toast toast =
-                    Toast.makeText(getApplicationContext(), "Classifier could not be initialized", Toast.LENGTH_SHORT);
-            toast.show();
-            finish();
-        }
-
         previewWidth = size.getWidth();
         previewHeight = size.getHeight();
 
         sensorOrientation = rotation - getScreenOrientation();
-
         rgbFrameBitmap = Bitmap.createBitmap(previewWidth, previewHeight, Config.ARGB_8888);
-        croppedBitmap = Bitmap.createBitmap(cropSize, cropSize, Config.ARGB_8888);
 
-        frameToCropTransform =
-                ImageUtils.getTransformationMatrix(
-                        previewWidth, previewHeight,
-                        cropSize, cropSize,
-                        sensorOrientation, MAINTAIN_ASPECT);
-
-        cropToFrameTransform = new Matrix();
-        frameToCropTransform.invert(cropToFrameTransform);
 
         trackingOverlay = (OverlayView) findViewById(R.id.tracking_overlay);
         trackingOverlay.addCallback(
@@ -403,9 +324,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                     @Override
                     public void drawCallback(final Canvas canvas) {
                         tracker.draw(canvas);
-                        if (isDebug()) {
-                            tracker.drawDebug(canvas);
-                        }
                     }
                 });
 
@@ -415,14 +333,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
     protected int[] getRgbBytes() {
         imageConverter.run();
         return rgbBytes;
-    }
-
-    protected int getLuminanceStride() {
-        return yRowStride;
-    }
-
-    protected byte[] getLuminance() {
-        return yuvBytes[0];
     }
 
     protected void fillBytes(final Plane[] planes, final byte[][] yuvBytes) {
@@ -435,10 +345,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
             }
             buffer.get(yuvBytes[i]);
         }
-    }
-
-    public boolean isDebug() {
-        return debug;
     }
 
     protected void readyForNextImage() {
@@ -460,45 +366,34 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         }
     }
 
-    @Override
-    public void onClick(View v) {
-        //
-    }
-
-    protected void callbackHelper(Camera camera) {
-        cardDetect.processImage(detector, croppedBitmap, MINIMUM_CONFIDENCE_TF_OD_API, cropToFrameTransform, tracker, trackingOverlay, handler, (step) -> {
-            switch (step) {
-                case preDetected:
+    private Consumer<CardDetectResult> handleCardDetectResult() {
+        return (result) -> {
+//            System.out.println(result);
+            switch (result.getStep()) {
+                case PRE_DETECTED:
+                case DETECTED:
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
-                            textView.setTextSize(20);
-                            textView.setText("CLOSER TO CAMERA");
+                            updateText(result.getInstruction());
                         }
                     });
                     break;
-                case detected:
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
-                            textView.setTextSize(20);
-                            textView.setText("HOLD STEADY");
-                        }
-                    });
-                    break;
-                case postable:
+                case POSTABLE:
                     if (!posted) {
-                        System.out.println(getEncodedString(rgbFrameBitmap));
-                        System.out.println("onImageAvailable - postable");
-                        processingImage(getEncodedString(rgbFrameBitmap), camera);
+                        posted = true;
+                        processResult(result);
                     }
-                    posted = true;
                     break;
             }
-        });
+        };
+    }
 
+    protected void processImage() {
+        cardDetect.processImage(rgbFrameBitmap, tracker, trackingOverlay, handler);
+
+        // Run CardDetect without tracker box
+        // cardDetect.processImage(rgbFrameBitmap, null, null, handler);
         computingDetection = false;
     }
 
@@ -519,8 +414,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         }
         try {
             onImageAvailableHelper(reader);
-
-            callbackHelper(null);
+            processImage();
         } catch (final Exception e) {
             e.printStackTrace();
             Trace.endSection();
@@ -529,60 +423,56 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         Trace.endSection();
     }
 
-    private String getEncodedString(Bitmap bitmap) {
+    protected void updateText(Instruction instruction) {
+        String s = "";
 
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os);
+        switch (instruction) {
+            case HOLD_STEADY:
+                s = "Hold Steady";
+                break;
+            case MOVE_CLOSER:
+                s = "Move Closer";
+                break;
+            case MOVE_AWAY:
+                s = "Move Away";
+                break;
+            case ONLY_ONE:
+                s = "Multiple IDs";
+                break;
+            case NO_CARD:
+            default:
+                s = "Show ID";
+        }
 
-        byte[] imageArr = os.toByteArray();
-        return Base64.encodeToString(imageArr, Base64.NO_WRAP);
-
+        TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
+        textView.setTextSize(20);
+        textView.setText(s);
     }
 
-    //    protected ArrayList<JobError> extractRetryableErrors(Job job) {
-//        ArrayList<JobError> resError = new ArrayList<JobError>();
-//
-//        if (job != null && job.getResult() != null) {
-//            if (job.getResult().getConfidences().getIdQuality() < 0.4) {
-//                resError.add(new JobError("PoorIdImageQuality"));
-//            }
-//            for (int i = 0; i < job.getErrors().length; i++) {
-//                String s = job.getErrors()[i].getType();
-//                if (s.equals("InvalidIdError") || s.equals("InvalidIdPhotoError") || s.equals("InvalidUserPhotoError") || s.equals("ExpiredIdError") ) {
-//                    resError.add(new JobError(s));
-//                }
-//            }
-//        }
-//        return resError;
-//    }
     protected void updateText(RetryableError retryableErrors) {
         String s = "";
 
         switch (retryableErrors) {
-            case InvalidIdError:
-                s = "InvalidIdError";
-                break;
             case InvalidIdPhotoError:
                 s = "Invalid Photo ID";
                 break;
             case InvalidUserPhotoError:
                 s = "Invalid Selfie";
                 break;
-            case ExpiredIdError:
-                s = "Expired ID";
+            case GlareIdPhotoError:
+                s = "ID has glare";
                 break;
-            case PoorIdImageQuality:
-                s = "Poor Image Quality";
+            case BlurryIdPhotoError:
+                s = "Blurry ID";
                 break;
         }
 
-        TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
+        TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
         textView.setTextSize(20);
         textView.setText(s);
     }
 
-    protected void processingImage(String image, Camera oldCamera) {
-        System.out.println("processingImage");
+    protected void processResult(CardDetectResult cardDetectResult) {
 
         Runnable resumeCamera = new Runnable() {
             public void run() {
@@ -602,10 +492,9 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
             if (response.getError() != null) {
                 System.out.println(response.getError().getClass().getName() + ": " + response.getError().getMessage());
-                TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
+                TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
                 textView.setTextSize(20);
-                textView.setText("ERROR PROCESSING");
-
+                textView.setText("An error occurred");
                 Timer timer = new Timer();
                 timer.schedule(new TimerTask() {
                     @Override
@@ -618,11 +507,10 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
             System.out.println("Callback");
             System.out.println(response);
-            ArrayList<RetryableError> retryableErrors = VouchedUtils.extractRetryableErrors(response.getJob());
+            List<RetryableError> retryableErrors = VouchedUtils.extractRetryableIdErrors(response.getJob());
 
             if (retryableErrors.size() != 0) {
                 System.out.println("Inside OnError - " + retryableErrors.size());
-
                 updateText(retryableErrors.get(0));
 
                 Timer timer = new Timer();
@@ -635,12 +523,12 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
             } else {
                 if (oldCamera == null) {
                     camera.onPause();
-                    Intent i = new Intent(DetectorActivity.this, FaceDetectorActivity.class);
+                    Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
                     i.putExtra("Session", (Serializable) session);
                     startActivity(i);
                 } else {
                     oldCamera.stopPreview();
-                    Intent i = new Intent(DetectorActivity.this, FaceDetectorActivity.class);
+                    Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
                     i.putExtra("Session", (Serializable) session);
                     startActivity(i);
                 }
@@ -650,8 +538,9 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
-                textView.setText("IMAGE PROCESSING");
+                TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
+                textView.setTextSize(20);
+                textView.setText("Processing");
 
                 String inputFirstName = null;
                 String inputLastName = null;
@@ -665,7 +554,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
                 System.out.println("Before - Get Job Back from postFrontId");
                 waitingOnVouched = true;
-                session.postFrontId(DetectorActivity.this, image, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), callback);
+                session.postFrontId(DetectorActivity.this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), callback);
                 if (oldCamera == null) {
                     camera.onPause();
                 } else {
@@ -721,8 +610,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                     }
                 };
 
-        ++timestamp;
-        final long currTimestamp = timestamp;
         trackingOverlay.postInvalidate();
 
         // No mutex needed as this method is not reentrant.
@@ -735,13 +622,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
 
         readyForNextImage();
-
-        final Canvas canvas = new Canvas(croppedBitmap);
-        canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
-        // For examining the actual TF input.
-        if (SAVE_PREVIEW_BITMAP) {
-            ImageUtils.saveBitmap(croppedBitmap);
-        }
     }
 
     /**
@@ -752,6 +632,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         if (isProcessingFrame || waitingOnVouched) {
             return;
         }
+        oldCamera = camera;
 
         try {
             // Initialize the storage bitmaps once when the resolution is known.
@@ -787,8 +668,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
                         isProcessingFrame = false;
                     }
                 };
-        ++timestamp;
-        final long currTimestamp = timestamp;
         trackingOverlay.postInvalidate();
 
         // No mutex needed as this method is not reentrant.
@@ -801,14 +680,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
         readyForNextImage();
 
-        final Canvas canvas = new Canvas(croppedBitmap);
-        canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
-        // For examining the actual TF input.
-        if (SAVE_PREVIEW_BITMAP) {
-            ImageUtils.saveBitmap(croppedBitmap);
-        }
-
-        callbackHelper(camera);
+        processImage();
     }
 
 }

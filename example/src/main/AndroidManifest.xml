@@ -34,11 +34,18 @@
         <activity
             android:name="id.vouched.android.example.FaceDetectorActivity"
             android:exported="true"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait">
+
+        </activity>
         <activity
             android:name="id.vouched.android.example.DetectorActivity"
             android:label="@string/vouched_app_name"
             android:screenOrientation="portrait">
+
+        </activity>
+        <activity
+            android:name=".FaceDetectorActivityV2"
+            android:exported="true">
 
         </activity>
     </application>
