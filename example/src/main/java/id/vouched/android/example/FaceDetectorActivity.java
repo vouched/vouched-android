@@ -17,17 +17,14 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import id.vouched.android.FaceDetect;
+import id.vouched.android.FaceDetectOLD;
 import id.vouched.android.OnFaceDetectListener;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
-import id.vouched.android.model.Job;
-import id.vouched.android.model.JobError;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
 
@@ -35,7 +32,7 @@ import id.vouched.android.model.RetryableError;
 public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDetectListener {
     private Handler handler;
     private HandlerThread handlerThread;
-    private FaceDetect faceDetect;
+    private FaceDetectOLD faceDetect;
     public SurfaceView previewDisplayView;
     private RequestQueue mQueue;
     public VouchedSession session;
@@ -52,7 +49,7 @@ public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDet
         previewDisplayView.setVisibility(View.GONE);
         ViewGroup viewGroup = findViewById(R.id.preview_display_layout);
         viewGroup.addView(previewDisplayView);
-        faceDetect = new FaceDetect(this);
+        faceDetect = new FaceDetectOLD(this);
         faceDetect.configure(this);
         faceDetect.setupPreviewDisplayView(previewDisplayView);
     }

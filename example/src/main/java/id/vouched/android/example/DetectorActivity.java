@@ -70,7 +70,7 @@ import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
 import id.vouched.android.model.SessionType;
-import id.vouched.android.tracking.CardDetectOptions;
+import id.vouched.android.CardDetectOptions;
 import id.vouched.android.tracking.MultiBoxTracker;
 
 public class DetectorActivity extends AppCompatActivity implements OnImageAvailableListener,
