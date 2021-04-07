@@ -22,7 +22,7 @@ public class NameInputActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i = new Intent(NameInputActivity.this, DetectorActivity.class);
+                Intent i = new Intent(NameInputActivity.this, DetectorActivityV2.class);
 
                 i.putExtra("firstName", firstNameInput.getText());
                 i.putExtra("lastName", lastNameInput.getText());

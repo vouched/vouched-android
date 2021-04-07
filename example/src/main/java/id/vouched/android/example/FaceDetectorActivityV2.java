@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Consumer;
 
 import id.vouched.android.FaceDetect;
 import id.vouched.android.FaceDetectOptions;
@@ -48,7 +47,7 @@ import id.vouched.android.model.RetryableError;
  * Live preview demo app for ML Kit APIs using CameraX.
  */
 @RequiresApi(VERSION_CODES.LOLLIPOP)
-public final class FaceDetectorActivityV2 extends AppCompatActivity {
+public final class FaceDetectorActivityV2 extends AppCompatActivity implements FaceDetect.OnDetectResultListener, VouchedSession.OnJobResponseListener {
     private static final int PERMISSION_REQUESTS = 1;
 
     private PreviewView previewView;
@@ -73,7 +72,7 @@ public final class FaceDetectorActivityV2 extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        faceDetect = new FaceDetect(this, FaceDetectOptions.defaultOptions(), handleFaceDetectResult());
+        faceDetect = new FaceDetect(this, FaceDetectOptions.defaultOptions(), this);
         cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
 
         setContentView(R.layout.activity_face_2);
@@ -132,56 +131,57 @@ public final class FaceDetectorActivityV2 extends AppCompatActivity {
         }
     }
 
-    private Consumer<FaceDetectResult> handleFaceDetectResult() {
-        return faceDetectResult -> {
-            TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
-            textView.setTextSize(20);
-            textView.setTextColor(Color.WHITE);
-            textView.setText(faceDetectResult.getInstruction().name());
+    @Override
+    public void onFaceDetectResult(FaceDetectResult faceDetectResult) {
+        TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
+        textView.setTextSize(20);
+        textView.setTextColor(Color.WHITE);
+        textView.setText(faceDetectResult.getInstruction().name());
 
-            if (faceDetectResult.getStep() == Step.POSTABLE) {
-                session.postFace(this, faceDetectResult, null, handleJobResponse());
+        if (faceDetectResult.getStep() == Step.POSTABLE) {
+            session.postFace(this, faceDetectResult, null, this);
 
-                if (cameraProvider != null) {
-                    cameraProvider.unbindAll();
-                }
+            if (cameraProvider != null) {
+                cameraProvider.unbindAll();
             }
-        };
+        }
     }
 
-    private Consumer<JobResponse> handleJobResponse() {
-        return jobResponse -> {
-            if (jobResponse.getError() != null) {
-                System.out.println(jobResponse.getError().getMessage());
+    @Override
+    public void onJobResponse(JobResponse response) {
+        faceDetect.reset();
+
+        if (response.getError() != null) {
+            System.out.println(response.getError().getMessage());
+        } else {
+            Job job = response.getJob();
+            System.out.println(job.toJson());
+            List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(job);
+            if (!retryableErrors.isEmpty()) {
+                retryableErrors.forEach(System.out::println);
+
+                Timer timer = new Timer();
+                Runnable resume = new Runnable() {
+                    public void run() {
+                        if (faceDetect != null) {
+                            faceDetect.resume();
+                        }
+                        bindAllCameraUseCases();
+                    }
+                };
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(resume);
+                    }
+                }, 5000);
             } else {
-                Job job = jobResponse.getJob();
-                List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(job);
-                if (!retryableErrors.isEmpty()) {
-                    System.out.println(retryableErrors.get(0).name());
-
-                    Timer timer = new Timer();
-                    Runnable resume = new Runnable() {
-                        public void run() {
-                            if (faceDetect != null) {
-                                faceDetect.resume();
-                            }
-                            bindAllCameraUseCases();
-                        }
-                    };
-                    timer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            runOnUiThread(resume);
-                        }
-                    }, 5000);
-                } else {
-                    Intent i = new Intent(FaceDetectorActivityV2.this, ResultsActivity.class);
-                    i.putExtra("Session", (Serializable) session);
-                    startActivity(i);
-                }
-
+                Intent i = new Intent(FaceDetectorActivityV2.this, ResultsActivity.class);
+                i.putExtra("Session", (Serializable) session);
+                startActivity(i);
             }
-        };
+
+        }
     }
 
     private void bindAllCameraUseCases() {
@@ -221,8 +221,6 @@ public final class FaceDetectorActivityV2 extends AppCompatActivity {
 
         needUpdateGraphicOverlayImageSourceInfo = true;
         analysisUseCase.setAnalyzer(
-                // imageProcessor.processImageProxy will use another thread to run the detection underneath,
-                // thus we can just runs the analyzer itself on main thread.
                 ContextCompat.getMainExecutor(this),
                 imageProxy -> {
                     if (needUpdateGraphicOverlayImageSourceInfo) {
@@ -310,4 +308,5 @@ public final class FaceDetectorActivityV2 extends AppCompatActivity {
         System.out.println("Permission NOT granted: " + permission);
         return false;
     }
+
 }

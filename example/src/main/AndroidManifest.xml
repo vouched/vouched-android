@@ -48,6 +48,11 @@
             android:exported="true">
 
         </activity>
+        <activity
+            android:name=".DetectorActivityV2"
+            android:exported="true">
+
+        </activity>
     </application>
 
 </manifest>

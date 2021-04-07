@@ -55,9 +55,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Consumer;
 
 import id.vouched.android.CardDetect;
+import id.vouched.android.CardDetectOptions;
 import id.vouched.android.CardDetectResult;
 import id.vouched.android.Instruction;
 import id.vouched.android.VouchedSession;
@@ -69,13 +69,13 @@ import id.vouched.android.env.ImageUtils;
 import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
-import id.vouched.android.model.SessionType;
-import id.vouched.android.CardDetectOptions;
 import id.vouched.android.tracking.MultiBoxTracker;
 
 public class DetectorActivity extends AppCompatActivity implements OnImageAvailableListener,
         Camera.PreviewCallback,
-        CompoundButton.OnCheckedChangeListener {
+        CompoundButton.OnCheckedChangeListener,
+        CardDetect.OnDetectResultListener,
+        VouchedSession.OnJobResponseListener {
 
     private static final Size DESIRED_PREVIEW_SIZE = new Size(960, 720);
     private static final float TEXT_SIZE_DIP = 10;
@@ -116,8 +116,8 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         super.onCreate(null);
         setContentView(R.layout.tfe_od_activity_camera);
 
-        session = new VouchedSession(SessionType.idVerificationWithFace, BuildConfig.API_KEY, BuildConfig.API_URL);
-        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), handleCardDetectResult());
+        session = new VouchedSession(BuildConfig.API_KEY, BuildConfig.API_URL);
+        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
@@ -366,28 +366,27 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         }
     }
 
-    private Consumer<CardDetectResult> handleCardDetectResult() {
-        return (result) -> {
-//            System.out.println(result);
-            switch (result.getStep()) {
-                case PRE_DETECTED:
-                case DETECTED:
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateText(result.getInstruction());
-                        }
-                    });
-                    break;
-                case POSTABLE:
-                    if (!posted) {
-                        posted = true;
-                        processResult(result);
+    @Override
+    public void onCardDetectResult(CardDetectResult result) {
+        switch (result.getStep()) {
+            case PRE_DETECTED:
+            case DETECTED:
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        updateText(result.getInstruction());
                     }
-                    break;
-            }
-        };
+                });
+                break;
+            case POSTABLE:
+                if (!posted) {
+                    posted = true;
+                    processResult(result);
+                }
+                break;
+        }
     }
+
 
     protected void processImage() {
         cardDetect.processImage(rgbFrameBitmap, tracker, trackingOverlay, handler);
@@ -474,67 +473,6 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
     protected void processResult(CardDetectResult cardDetectResult) {
 
-        Runnable resumeCamera = new Runnable() {
-            public void run() {
-                waitingOnVouched = false;
-                posted = false;
-                if (oldCamera == null) {
-                    camera.onResume();
-                } else {
-                    oldCamera.startPreview();
-                }
-            }
-        };
-
-        Consumer<JobResponse> callback = response -> {
-            // After session call, clear/clean CardDetect state
-            cardDetect.reset();
-
-            if (response.getError() != null) {
-                System.out.println(response.getError().getClass().getName() + ": " + response.getError().getMessage());
-                TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
-                textView.setTextSize(20);
-                textView.setText("An error occurred");
-                Timer timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        runOnUiThread(resumeCamera);
-                    }
-                }, 2000);
-                return;
-            }
-
-            System.out.println("Callback");
-            System.out.println(response);
-            List<RetryableError> retryableErrors = VouchedUtils.extractRetryableIdErrors(response.getJob());
-
-            if (retryableErrors.size() != 0) {
-                System.out.println("Inside OnError - " + retryableErrors.size());
-                updateText(retryableErrors.get(0));
-
-                Timer timer = new Timer();
-                timer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        runOnUiThread(resumeCamera);
-                    }
-                }, 5000);
-            } else {
-                if (oldCamera == null) {
-                    camera.onPause();
-                    Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
-                    i.putExtra("Session", (Serializable) session);
-                    startActivity(i);
-                } else {
-                    oldCamera.stopPreview();
-                    Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
-                    i.putExtra("Session", (Serializable) session);
-                    startActivity(i);
-                }
-            }
-        };
-
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -554,7 +492,7 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
                 System.out.println("Before - Get Job Back from postFrontId");
                 waitingOnVouched = true;
-                session.postFrontId(DetectorActivity.this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), callback);
+                session.postFrontId(DetectorActivity.this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), DetectorActivity.this);
                 if (oldCamera == null) {
                     camera.onPause();
                 } else {
@@ -563,6 +501,70 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
             }
         });
 
+    }
+
+    @Override
+    public void onJobResponse(JobResponse response) {
+        // After session call, clear/clean CardDetect state
+        cardDetect.reset();
+
+        Runnable resumeCamera = new Runnable() {
+            public void run() {
+                waitingOnVouched = false;
+                posted = false;
+                if (oldCamera == null) {
+                    camera.onResume();
+                } else {
+                    oldCamera.startPreview();
+                }
+            }
+        };
+
+        if (response.getError() != null) {
+            System.out.println(response.getError().getClass().getName() + ": " + response.getError().getMessage());
+            TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
+            textView.setTextSize(20);
+            textView.setText("An error occurred");
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    runOnUiThread(resumeCamera);
+                }
+            }, 2000);
+            return;
+        }
+
+        System.out.println("Callback");
+        System.out.println(response);
+        System.out.println(response.getJob().toJson());
+        List<RetryableError> retryableErrors = VouchedUtils.extractRetryableIdErrors(response.getJob());
+
+        if (retryableErrors.size() != 0) {
+            System.out.println("Inside OnError - " + retryableErrors.size());
+            retryableErrors.forEach(System.out::println);
+            updateText(retryableErrors.get(0));
+
+            Timer timer = new Timer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    runOnUiThread(resumeCamera);
+                }
+            }, 5000);
+        } else {
+            if (oldCamera == null) {
+                camera.onPause();
+                Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
+                i.putExtra("Session", (Serializable) session);
+                startActivity(i);
+            } else {
+                oldCamera.stopPreview();
+                Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
+                i.putExtra("Session", (Serializable) session);
+                startActivity(i);
+            }
+        }
     }
 
     protected void onImageAvailableHelper(ImageReader reader) {

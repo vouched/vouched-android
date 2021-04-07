@@ -3,201 +3,305 @@
 [![GitHub release](https://img.shields.io/github/release/vouched/vouched-android.svg?maxAge=60)](https://github.com/vouched/vouched-android/releases)
 [![License](https://img.shields.io/github/license/vouched/vouched-android)](https://github.com/vouched/vouched-android/blob/master/LICENSE)
 
-#### Run the Example
+## Run Example
 
-1. Clone the repo
-2. Setup the [environment variables](#environment-variables)
-3. Setup the [assets and library files](#assets-and-library-files)
-4. Run Example on a device with minSdkVersion 24
+Clone this repo and change directory to _example_
 
-**1st Screen** - Name Input (Optional)
-**2st Screen** - Card Detection
-**3nd Screen** - Face Detection
-**4th Screen** - ID Verification Results
+```shell
+git clone https://github.com/vouched/vouched-android
 
-#### Features displayed in Example
-
-- ID Card and Passport Detection
-- Face Detection (with liveness)
-- ID Verification
-- Name Verification
-
-## How to use the Vouched Library
-
-To use the library in your own project refer to the following code snippets:
-
-**ID Card detection and submission**
-
+cd vouched-android/example
 ```
-import id.vouched.android.CardDetect;
-import id.vouched.android.VouchedSession;
 
-private CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), handleCardDetectResult());
-protected VouchedSession session = new VouchedSession();
+Then, follow steps listed on the [example README](https://github.com/vouched/vouched-android/blob/master/example/README.md)
 
-cardDetect.processImage(rgbFrameBitmap, tracker, trackingOverlay, handler);
-// if don't need trackingOverlay, pass null for tracker and trackingOverlay
-// cardDetect.processImage(rgbFrameBitmap, null, null, handler);
+## Prerequisites
 
-private Consumer<CardDetectResult> handleCardDetectResult() {
-    return (result) -> {
-        switch (result.getStep()) {
-            case PRE_DETECTED:
-            case DETECTED:
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // display instruction message
-                    }
-                });
-                break;
-            case POSTABLE:
-                if (!posted) {
-                    posted = true;
-                    processResult(result);
-                }
-                break;
-        }
-    };
+- An account with Vouched
+- Your Vouched Public Key
+- Mobile Assets (available on the dashboard)
+
+## Install
+
+Add the package to your existing project
+
+```shell
+implementation 'id.vouched.android:vouched-sdk:VOUCHED_VERSION'
+```
+
+## Getting Started
+
+This section will provide a _step-by-step_ to understand the Vouched SDK through the Example.
+
+0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
+
+1. [Run the Example](#run-example)
+   - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each step.
+   ```java
+   System.out.println(job.toJson());
+   ```
+   - Once completed, take a look at the [Job details on your Dashboard](https://docs.vouched.id/#section/Dashboard/Jobs)
+2. Modify the Listeners
+
+   - Locate the [JobResponseListener](#jobresponselistener) in each Activity and make modifications.
+
+     - Comment out the [RetryableErrors](#retryableerror)
+       `List<RetryableError> retryableErrors = ...`
+     - Add custom logic to display data or control the navigation
+
+   - Locate the [CardDetectResultListener](#carddetectresultlistener) and [FaceDetectResultListener](#facedetectresultlistener) and add logging
+
+3. Tweak CameraX settings  
+   Better images lead to better results from Vouched AI
+4. You are ready to integrate Vouched SDK into your app
+
+## Reference
+
+### CameraX
+
+We recommend using [CameraX](https://developer.android.com/training/camerax) with the Vouched SDK. The references will all use CameraX.
+
+### VouchedSession
+
+This class handles a user's Vouched session. It takes care of the API calls. Use one instance for the duration of a user's verification session.
+
+##### Initialize
+
+```java
+VouchedSession session = new VouchedSession("PUBLIC_KEY");
+```
+
+| Parameter Type | Nullable |
+| -------------- | :------: |
+| String         |  false   |
+
+##### POST Front Id image
+
+```java
+session.postFrontId(this, cardDetectResult, new Params.Builder(), this);
+```
+
+| Parameter Type                              | Nullable |
+| ------------------------------------------- | :------: |
+| android.content.Context                     |  false   |
+| [CardDetectResult](#carddetectresult)       |  false   |
+| [ParamsBuilder](#paramsbuilder)             |   true   |
+| [JobResponseListener](#jobresponselistener) |  false   |
+
+##### POST Selfie image
+
+```java
+session.postFace(this, faceDetectResult, new Params.Builder(), this);
+```
+
+| Parameter Type                              | Nullable |
+| ------------------------------------------- | :------: |
+| android.content.Context                     |  false   |
+| [FaceDetectResult](#facedetectresult)       |  false   |
+| [ParamsBuilder](#paramsbuilder)             |   true   |
+| [JobResponseListener](#jobresponselistener) |  false   |
+
+##### POST confirm verification
+
+```javascript
+session.confirm(this, null, this);
+```
+
+| Parameter Type                              | Nullable |
+| ------------------------------------------- | :------: |
+| android.content.Context                     |  false   |
+| [ParamsBuilder](#paramsbuilder)             |   true   |
+| [JobResponseListener](#jobresponselistener) |  false   |
+
+### CardDetect
+
+This class handles detecting an ID (cards and passports) and performing necessary steps to ensure image is POSTABLE.
+
+##### Initialize
+
+```java
+CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
+```
+
+| Parameter Type                                                 | Nullable |
+| -------------------------------------------------------------- | :------: |
+| android.content.res.AssetManager                               |  false   |
+| [CardDetectOptions](#carddetectoptions)                        |  false   |
+| [CardDetect.OnDetectResultListener](#carddetectresultlistener) |  false   |
+
+##### Process Image
+
+```java
+cardDetect.processImageProxy(imageProxy, handler);
+```
+
+| Parameter Type                  | Nullable |
+| ------------------------------- | :------: |
+| androidx.camera.core.ImageProxy |  false   |
+| android.os.Handler              |  false   |
+
+### FaceDetect
+
+This class handles detecting a face and performing necessary steps to ensure image is POSTABLE.
+
+##### Initialize
+
+```java
+FaceDetect faceDetect = new FaceDetect(this, new FaceDetectOptions.Builder().withLivenessMode(LivenessMode.DISTANCE).build(), this);
+```
+
+| Parameter Type                                                 | Nullable |
+| -------------------------------------------------------------- | :------: |
+| android.content.Context                                        |  false   |
+| [FaceDetectOptions](#facedetectoptions)                        |  false   |
+| [FaceDetect.OnDetectResultListener](#facedetectresultlistener) |  false   |
+
+##### Process Image
+
+```java
+faceDetect.processImageProxy(imageProxy, graphicOverlay);
+```
+
+| Parameter Type                  | Nullable |
+| ------------------------------- | :------: |
+| androidx.camera.core.ImageProxy |  false   |
+| GraphicOverlay                  |   true   |
+
+### Types
+
+##### CardDetectResult
+
+The output from [Card Detection](#carddetect) and used to submit an ID.
+
+```java
+class CardDetectResult {
+    public Step getStep() { ... }
+
+    public Instruction getInstruction() { ... }
+
+    public String getImage() { ... }
+
+    public String getDistanceImage() { ... }
 }
-
-protected void processResult(CardDetectResult cardDetectResult) {
-
-    Runnable resumeCamera = new Runnable() {
-        public void run() {
-            waitingOnVouched = false;
-            posted = false;
-            if (oldCamera == null) {
-                camera.onResume();
-            } else {
-                oldCamera.startPreview();
-            }
-        }
-    };
-
-    Consumer<JobResponse> callback = response -> {
-        // After session call, clear/clean CardDetect state
-        cardDetect.reset();
-
-        if (response.getError() != null) {
-            // display error message
-            // resume camera
-            return;
-        }
-
-        List<RetryableError> retryableErrors = VouchedUtils.extractRetryableIdErrors(response.getJob());
-
-        if (retryableErrors.size() != 0) {
-            // display error message
-            // resume camera
-        } else {
-            if (oldCamera == null) {
-                camera.onPause();
-            } else {
-                oldCamera.stopPreview();
-            }
-            Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
-            i.putExtra("Session", (Serializable) session);
-            startActivity(i);
-        }
-    };
-
-    runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-            // display processing message
-            // create Params.Builder object w/ applicable data
-            Params.Builder builder = new Params.Builder();
-            session.postFrontId(DetectorActivity.this, cardDetectResult, builder, callback);
-            if (oldCamera == null) {
-                camera.onPause();
-            } else {
-                oldCamera.stopPreview();
-            }
-        }
-    });
-
-}
-
 ```
 
-**Face(Selfie) detection and submission**
-Face detect uses [CameraX API](https://developer.android.com/training/camerax)
+##### FaceDetectResult
 
-```
-import id.vouched.android.FaceDetect;
-import id.vouched.android.VouchedSession;
+The output from [Face Detection](#facedetect) and used to submit a Selfie.
 
-private FaceDetect faceDetect = new FaceDetect(this, FaceDetectOptions.defaultOptions(), handleFaceDetectResult());
+```java
+class FaceDetectResult {
+    public Step getStep() { ... }
 
-private Consumer<FaceDetectResult> handleFaceDetectResult() {
-    return faceDetectResult -> {
-        // display instruction message
-        if (faceDetectResult.getStep() == Step.POSTABLE) {
-            session.postFace(this, faceDetectResult, null, jobResponse -> {
-                if (jobResponse.getError() != null) {
-                    // display error message
-                } else {
-                    Job job = jobResponse.getJob();
-                    List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(job);
-                    if (!retryableErrors.isEmpty()) {
-                        // display error message
-                        // resume camera and bindAnalysisUseCase
-                    } else {
-                        Intent i = new Intent(FaceDetectorActivityV2.this, ResultsActivity.class);
-                        i.putExtra("Session", (Serializable) session);
-                        startActivity(i);
-                    }
+    public Instruction getInstruction() { ... }
 
-                }
-            });
+    public String getImage() { ... }
 
-            if (cameraProvider != null) {
-                cameraProvider.unbindAll();
-            }
-        }
-    };
-}
-
-private void bindAnalysisUseCase() {
-    ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
-    analysisUseCase = builder.build();
-    analysisUseCase.setAnalyzer(
-        ContextCompat.getMainExecutor(this),
-        imageProxy -> {
-            // set image source info if necessary
-            try {
-                if (faceDetect != null) {
-                    faceDetect.processImageProxy(imageProxy, graphicOverlay);
-                }
-            } catch (Exception e) {
-                // show error message
-            }
-        });
-
-    cameraProvider.bindToLifecycle(this, cameraSelector, analysisUseCase);
+    public String getUserDistanceImage() { ... }
 }
 ```
 
-## Environment Variables
+##### ParamsBuilder
 
-Add to _example/gradle.properties_
+The builder for the parameters that are used to submit a Job.
 
+```java
+class Builder {
+    public Builder withFirstName(String firstName) { ... }
+
+    public Builder withLastName(String lastName) { ... }
+
+    public Builder withIdPhoto(String idPhoto) { ... }
+
+    public Builder withUserPhoto(String userPhoto) { ... }
+
+    public Builder withUserDistancePhoto(String userDistancePhoto) { ... }
+
+    public Builder withIdDistancePhoto(String idDistancePhoto) { ... }
+
+    public Params build() { ... }
+}
 ```
-android.useAndroidX=true
-API_URL="https://verify.vouched.id"
-API_KEY="<API_PUBLIC_KEY>"
+
+##### JobResponseListener
+
+The listener to retrieve the [Job](https://docs.vouched.id/#tag/job-model) data from the submission.
+
+```java
+public interface OnJobResponseListener {
+    void onJobResponse(JobResponse response);
+}
 ```
 
-note: `"` is required for strings
+Follow the below template
 
-## Assets and Library Files
+```java
+@Override
+public void onJobResponse(JobResponse response) {
+    if (response.getError() != null) {
+        // handle app/network/system errors
+    }
 
-Get assets and library files from your Vouched representative
+    // debug Job data
+    System.out.println(response.getJob().toJson());
 
-- copy _libs/_ directory to _/example_
-- copy _assets/_ and _jniLibs/_ directores to _/example/src/main/_
+    // implement business and navigation logic based on Job data
+}
+```
 
-## License
+##### CardDetectOptions
 
-Vouched is available under the Apache License 2.0 license. See the LICENSE file for more info.
+The options for [Card Detection](#carddetect).
+
+```java
+class Builder {
+    public Builder withEnableDistanceCheck(boolean enableDistanceCheck) { ... }
+
+    public CardDetectOptions build() { ... }
+}
+```
+
+##### CardDetectResultListener
+
+The listener to retrieve [CardDetectResult](#carddetectresult).
+
+```java
+interface OnDetectResultListener {
+    void onFaceDetectResult(CardDetectResult cardDetectResult);
+}
+```
+
+##### FaceDetectOptions
+
+The options for [Face Detection](#facedetect).
+
+```java
+class Builder {
+    public Builder withLivenessMode(LivenessMode livenessMode) { ... }
+
+    public FaceDetectOptions build() { ... }
+}
+```
+
+##### FaceDetectResultListener
+
+The listener to retrieve [FaceDetectResult](#facedetectresult).
+
+```java
+interface OnDetectResultListener {
+    void onFaceDetectResult(FaceDetectResult faceDetectResult);
+}
+```
+
+##### RetryableError
+
+An enum to provide an optional baseline of Verification Error(s) for a given Job.
+
+```java
+enum RetryableError {
+    InvalidIdPhotoError,
+    InvalidUserPhotoError,
+    BlurryIdPhotoError,
+    GlareIdPhotoError
+}
+```

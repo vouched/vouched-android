@@ -22,14 +22,14 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import id.vouched.android.FaceDetectOLD;
-import id.vouched.android.OnFaceDetectListener;
+import id.vouched.android.OnFaceDetectListenerOLD;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
 
 
-public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDetectListener {
+public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDetectListenerOLD {
     private Handler handler;
     private HandlerThread handlerThread;
     private FaceDetectOLD faceDetect;
