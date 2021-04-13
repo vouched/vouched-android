@@ -17,6 +17,9 @@ allprojects {
         google()
         jcenter()
         mavenLocal()
+        maven {
+            url "https://dl.bintray.com/vouched/maven/"
+        }
     }
 }
 
