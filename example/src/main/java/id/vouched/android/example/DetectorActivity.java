@@ -555,12 +555,12 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         } else {
             if (oldCamera == null) {
                 camera.onPause();
-                Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
+                Intent i = new Intent(DetectorActivity.this, FaceDetectorActivity.class);
                 i.putExtra("Session", (Serializable) session);
                 startActivity(i);
             } else {
                 oldCamera.stopPreview();
-                Intent i = new Intent(DetectorActivity.this, FaceDetectorActivityV2.class);
+                Intent i = new Intent(DetectorActivity.this, FaceDetectorActivity.class);
                 i.putExtra("Session", (Serializable) session);
                 startActivity(i);
             }

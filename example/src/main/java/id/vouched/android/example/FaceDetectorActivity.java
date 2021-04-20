@@ -1,219 +1,310 @@
 package id.vouched.android.example;
 
+
+import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Trace;
-import android.view.SurfaceView;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
-
-import com.android.volley.RequestQueue;
-import com.android.volley.toolbox.Volley;
+import androidx.camera.core.CameraSelector;
+import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.Preview;
+import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import id.vouched.android.FaceDetectOLD;
-import id.vouched.android.OnFaceDetectListenerOLD;
+import id.vouched.android.FaceDetect;
+import id.vouched.android.FaceDetectOptions;
+import id.vouched.android.FaceDetectResult;
+import id.vouched.android.Step;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
-import id.vouched.android.model.Params;
+import id.vouched.android.mlkit.GraphicOverlay;
+import id.vouched.android.model.Job;
+import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.RetryableError;
 
 
-public class FaceDetectorActivity extends AppCompatActivity implements OnFaceDetectListenerOLD {
-    private Handler handler;
-    private HandlerThread handlerThread;
-    private FaceDetectOLD faceDetect;
-    public SurfaceView previewDisplayView;
-    private RequestQueue mQueue;
-    public VouchedSession session;
-    private boolean posted = false;
-    private boolean retake = false;
-    private boolean waitingOnVouched = false;
+@RequiresApi(VERSION_CODES.LOLLIPOP)
+public final class FaceDetectorActivity extends AppCompatActivity implements FaceDetect.OnDetectResultListener, VouchedSession.OnJobResponseListener {
+    private static final int PERMISSION_REQUESTS = 1;
+
+    private PreviewView previewView;
+    private GraphicOverlay graphicOverlay;
+
+    @Nullable
+    private ProcessCameraProvider cameraProvider;
+    @Nullable
+    private Preview previewUseCase;
+    @Nullable
+    private ImageAnalysis analysisUseCase;
+
+    @Nullable
+    private FaceDetect faceDetect;
+
+    private boolean needUpdateGraphicOverlayImageSourceInfo;
+
+    private CameraSelector cameraSelector;
+    private VouchedSession session;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_face);
-        mQueue = Volley.newRequestQueue(this);
-        previewDisplayView = new SurfaceView(this);
-        previewDisplayView.setVisibility(View.GONE);
-        ViewGroup viewGroup = findViewById(R.id.preview_display_layout);
-        viewGroup.addView(previewDisplayView);
-        faceDetect = new FaceDetectOLD(this);
-        faceDetect.configure(this);
-        faceDetect.setupPreviewDisplayView(previewDisplayView);
+
+        faceDetect = new FaceDetect(this, FaceDetectOptions.defaultOptions(), this);
+        cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
+
+        setContentView(R.layout.activity_face_2);
+        previewView = findViewById(R.id.preview_view);
+        if (previewView == null) {
+            System.out.println("previewView is null");
+        }
+        graphicOverlay = findViewById(R.id.graphic_overlay);
+        if (graphicOverlay == null) {
+            System.out.println("graphicOverlay is null");
+        }
+
+
+        new ViewModelProvider(this, AndroidViewModelFactory.getInstance(getApplication()))
+                .get(CameraXViewModel.class)
+                .getProcessCameraProvider()
+                .observe(
+                        this,
+                        provider -> {
+                            cameraProvider = provider;
+                            if (allPermissionsGranted()) {
+                                bindAllCameraUseCases();
+                            }
+                        });
+        if (!allPermissionsGranted()) {
+            getRuntimePermissions();
+        }
     }
 
-
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
-        handlerThread = new HandlerThread("inference");
-        handlerThread.start();
-        handler = new Handler(handlerThread.getLooper());
-        Intent i = getIntent();
-        session = (VouchedSession) i.getSerializableExtra("Session");
-        if (session != null) {
-            System.out.println("BREAK");
-            startCamera();
+        if (session == null) {
+            Intent i = getIntent();
+            session = (VouchedSession) i.getSerializableExtra("Session");
         }
+        if (faceDetect != null) {
+            faceDetect.resume();
+        }
+        bindAllCameraUseCases();
     }
 
     @Override
     protected void onPause() {
-        //handlerThread = new HandlerThread("inference");
-        handlerThread.quitSafely();
-        try {
-            handlerThread.join();
-            handlerThread = null;
-            handler = null;
-        } catch (final InterruptedException e) {
-            e.printStackTrace();
-        }
         super.onPause();
-    }
-
-    public void startCamera() {
-        faceDetect.startCamera(previewDisplayView);
-    }
-
-    public void stopCamera() {
-        faceDetect.stopCamera();
+        if (faceDetect != null) {
+            faceDetect.stop();
+        }
     }
 
     @Override
-    public void onFaceDetected(List multiFaceLandmarks) {
-        if (multiFaceLandmarks.isEmpty() || waitingOnVouched) {
-            return;
+    public void onDestroy() {
+        super.onDestroy();
+        if (faceDetect != null) {
+            faceDetect.stop();
         }
-        System.out.println("Number of faces detected: " + multiFaceLandmarks.size() + "\n");
-        try {
-            faceDetect.processImage(multiFaceLandmarks, handler, retake, (res) -> {
-                switch (res.step) {
-                    case preDetected:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                TextView textView = (TextView) findViewById(R.id.FaceDetInstructions);
-                                textView.setVisibility(View.VISIBLE);
-                                textView.setTextSize(20);
-                                textView.setText("Hold Steady");
-                            }
-                        });
-                        break;
-                    case detected:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                TextView textView = (TextView) findViewById(R.id.FaceDetInstructions);
-                                textView.setVisibility(View.VISIBLE);
-                                textView.setTextSize(20);
-                                textView.setText("Open Mouth");
-                            }
-                        });
-                        break;
-                    case liveness:
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                System.out.println("onImageAvailable - liveness");
-                                TextView textView = (TextView) findViewById(R.id.FaceDetInstructions);
-                                textView.setVisibility(View.VISIBLE);
-                                textView.setTextSize(20);
-                                textView.setText("Close Mouth and Hold Steady");
-                            }
-                        });
-                        break;
-                    case postable:
-                        if (!posted) {
-                            System.out.println("Postable");
-                            posted = true;
-                            retake = false;
-                            Toast.makeText(this, "Capturing Selfie", Toast.LENGTH_LONG);
-                            processingImage(res.encodedImage);
-                        }
-                        break;
-                }
-            });
-        } catch (final Exception e) {
-            e.printStackTrace();
-            Trace.endSection();
-        }
-        Trace.endSection();
     }
 
+    @Override
+    public void onFaceDetectResult(FaceDetectResult faceDetectResult) {
+        TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
+        textView.setTextSize(20);
+        textView.setTextColor(Color.WHITE);
+        textView.setText(faceDetectResult.getInstruction().name());
 
-    protected void processingImage(String image) {
-        System.out.println("processingImage");
+        if (faceDetectResult.getStep() == Step.POSTABLE) {
+            session.postFace(this, faceDetectResult, null, this);
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                TextView textView = (TextView) findViewById(R.id.FaceDetInstructions);
-                textView.setText("PROCESSING IMAGE");
-                try {
-                    waitingOnVouched = true;
-                    session.postFace(FaceDetectorActivity.this, image, new Params.Builder(), (response) -> {
-                        // After session call, clear/clean FaceDetect state
-                        faceDetect.reset();
-
-                        if (response.getError() != null) {
-                            System.out.println(response.getError().getClass().getName() + ": " + response.getError().getMessage());
-                            textView.setTextSize(20);
-                            textView.setText("ERROR PROCESSING");
-
-                            Timer timer = new Timer();
-                            timer.schedule(new TimerTask() {
-                                @Override
-                                public void run() {
-                                    runOnUiThread(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            posted = false;
-                                            retake = true;
-                                            waitingOnVouched = false;
-                                            startCamera();
-                                        }
-                                    });
-                                }
-                            }, 2000);
-
-                            return;
-                        }
-
-                        System.out.println("Callback");
-                        System.out.println(response);
-                        List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(response.getJob());
-
-                        if (retryableErrors.size() != 0) {
-                            System.out.println("Inside OnError - " + retryableErrors.size());
-                            System.out.println("Inside OnError");
-                            posted = false;
-                            retake = true;
-                        } else {
-                            System.out.println(response);
-                            Intent i = new Intent(FaceDetectorActivity.this, ResultsActivity.class);
-                            i.putExtra("Session", (Serializable) session);
-                            startActivity(i);
-                        }
-                    });
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            if (cameraProvider != null) {
+                cameraProvider.unbindAll();
             }
-        });
+        }
+    }
 
+    @Override
+    public void onJobResponse(JobResponse response) {
+        faceDetect.reset();
+
+        if (response.getError() != null) {
+            System.out.println(response.getError().getMessage());
+        } else {
+            Job job = response.getJob();
+            System.out.println(job.toJson());
+            List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(job);
+            if (!retryableErrors.isEmpty()) {
+                retryableErrors.forEach(System.out::println);
+
+                Timer timer = new Timer();
+                Runnable resume = new Runnable() {
+                    public void run() {
+                        if (faceDetect != null) {
+                            faceDetect.resume();
+                        }
+                        bindAllCameraUseCases();
+                    }
+                };
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(resume);
+                    }
+                }, 5000);
+            } else {
+                Intent i = new Intent(FaceDetectorActivity.this, ResultsActivity.class);
+                i.putExtra("Session", (Serializable) session);
+                startActivity(i);
+            }
+
+        }
+    }
+
+    private void bindAllCameraUseCases() {
+        if (cameraProvider != null) {
+            // As required by CameraX API, unbinds all use cases before trying to re-bind any of them.
+            cameraProvider.unbindAll();
+            bindPreviewUseCase();
+            bindAnalysisUseCase();
+        }
+    }
+
+    private void bindPreviewUseCase() {
+        if (cameraProvider == null) {
+            return;
+        }
+        if (previewUseCase != null) {
+            cameraProvider.unbind(previewUseCase);
+        }
+
+        Preview.Builder builder = new Preview.Builder();
+        previewUseCase = builder.build();
+        previewUseCase.setSurfaceProvider(previewView.getSurfaceProvider());
+        cameraProvider.bindToLifecycle(this, cameraSelector, previewUseCase);
+    }
+
+    @SuppressLint("UnsafeExperimentalUsageError")
+    private void bindAnalysisUseCase() {
+        if (cameraProvider == null) {
+            return;
+        }
+        if (analysisUseCase != null) {
+            cameraProvider.unbind(analysisUseCase);
+        }
+
+        ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
+        analysisUseCase = builder.build();
+
+        needUpdateGraphicOverlayImageSourceInfo = true;
+        analysisUseCase.setAnalyzer(
+                ContextCompat.getMainExecutor(this),
+                imageProxy -> {
+                    if (needUpdateGraphicOverlayImageSourceInfo) {
+                        int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
+                        if (graphicOverlay != null) {
+                            if (rotationDegrees == 0 || rotationDegrees == 180) {
+                                graphicOverlay.setImageSourceInfo(
+                                        imageProxy.getWidth(), imageProxy.getHeight(), true);
+                            } else {
+                                graphicOverlay.setImageSourceInfo(
+                                        imageProxy.getHeight(), imageProxy.getWidth(), true);
+                            }
+                        }
+                        needUpdateGraphicOverlayImageSourceInfo = false;
+                    }
+                    try {
+                        if (faceDetect != null) {
+                            faceDetect.processImageProxy(imageProxy, graphicOverlay);
+                        }
+                    } catch (Exception e) {
+                        System.out.println("Failed to process image. Error: " + e.getLocalizedMessage());
+                        Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT)
+                                .show();
+                    }
+                });
+
+        cameraProvider.bindToLifecycle(this, cameraSelector, analysisUseCase);
+    }
+
+    private String[] getRequiredPermissions() {
+        try {
+            PackageInfo info =
+                    this.getPackageManager()
+                            .getPackageInfo(this.getPackageName(), PackageManager.GET_PERMISSIONS);
+            String[] ps = info.requestedPermissions;
+            if (ps != null && ps.length > 0) {
+                return ps;
+            } else {
+                return new String[0];
+            }
+        } catch (Exception e) {
+            return new String[0];
+        }
+    }
+
+    private boolean allPermissionsGranted() {
+        for (String permission : getRequiredPermissions()) {
+            if (!isPermissionGranted(this, permission)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void getRuntimePermissions() {
+        List<String> allNeededPermissions = new ArrayList<>();
+        for (String permission : getRequiredPermissions()) {
+            if (!isPermissionGranted(this, permission)) {
+                allNeededPermissions.add(permission);
+            }
+        }
+
+        if (!allNeededPermissions.isEmpty()) {
+            ActivityCompat.requestPermissions(
+                    this, allNeededPermissions.toArray(new String[0]), PERMISSION_REQUESTS);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        System.out.println("Permission granted!");
+        if (allPermissionsGranted()) {
+            bindAllCameraUseCases();
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private static boolean isPermissionGranted(Context context, String permission) {
+        if (ContextCompat.checkSelfPermission(context, permission)
+                == PackageManager.PERMISSION_GRANTED) {
+            System.out.println("Permission granted: " + permission);
+            return true;
+        }
+        System.out.println("Permission NOT granted: " + permission);
+        return false;
     }
 
 }

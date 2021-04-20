@@ -30,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.function.Consumer;
 
 import id.vouched.android.CardDetect;
 import id.vouched.android.CardDetectOptions;
@@ -342,7 +341,7 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
             }, 5000);
         } else {
             onPause();
-            Intent i = new Intent(DetectorActivityV2.this, FaceDetectorActivityV2.class);
+            Intent i = new Intent(DetectorActivityV2.this, FaceDetectorActivity.class);
             i.putExtra("Session", (Serializable) session);
             startActivity(i);
         }

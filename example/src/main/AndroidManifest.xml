@@ -32,25 +32,21 @@
         </activity>
         <activity android:name="id.vouched.android.example.NameInputActivity" />
         <activity
-            android:name="id.vouched.android.example.FaceDetectorActivity"
-            android:exported="true"
-            android:screenOrientation="portrait">
-
-        </activity>
-        <activity
             android:name="id.vouched.android.example.DetectorActivity"
             android:label="@string/vouched_app_name"
             android:screenOrientation="portrait">
 
         </activity>
         <activity
-            android:name=".FaceDetectorActivityV2"
-            android:exported="true">
+            android:name=".DetectorActivityV2"
+            android:exported="true"
+            android:screenOrientation="portrait">
 
         </activity>
         <activity
-            android:name=".DetectorActivityV2"
-            android:exported="true">
+            android:name=".FaceDetectorActivity"
+            android:exported="true"
+            android:screenOrientation="portrait">
 
         </activity>
     </application>

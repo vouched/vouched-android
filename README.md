@@ -29,14 +29,6 @@ Add the package to your existing project
 implementation 'id.vouched.android:vouched-sdk:VOUCHED_VERSION'
 ```
 
-Due to [JCenter deprecation](https://developer.android.com/studio/build/jcenter-migration), need to add the follow repository block
-
-```
-maven {
-    url "https://dl.bintray.com/vouched/maven/"
-}
-```
-
 ## Getting Started
 
 This section will provide a _step-by-step_ to understand the Vouched SDK through the Example.
