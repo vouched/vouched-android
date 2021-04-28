@@ -7,43 +7,54 @@
     tools:context="id.vouched.android.example.NameInputActivity">
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputFirstNameLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="50dp"
-        android:id="@+id/textInputFirstNameLayout"
-        >
+        android:layout_margin="50dp">
+
         <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/textInputFirstName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="First Name"
-            android:id="@+id/textInputFirstName"/>
+            android:hint="First Name" />
     </com.google.android.material.textfield.TextInputLayout>
 
 
     <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textInputLastNameLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_margin="50dp"
         android:layout_below="@+id/textInputFirstNameLayout"
-       >
+        android:layout_margin="50dp">
+
         <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/textInputLastName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Last Name"
-            android:id="@+id/textInputLastName"
+            android:layout_marginTop="200dp"
 
-            android:layout_marginTop="200dp"/>
+            android:hint="Last Name" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/barcodeSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:checked="false"
+        android:text="Include Barcode"
+        android:textColor="@color/tfe_color_primary" />
 
     <Button
         android:id="@+id/button3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="300dp"
         android:layout_centerHorizontal="true"
-        android:text="Next: ID Verification"
+        android:layout_marginBottom="300dp"
         android:background="@color/tfe_color_primary"
         android:padding="12dp"
-        android:textColor="#fff"/>
+        android:text="Next: ID Verification"
+        android:textColor="#fff" />
 </RelativeLayout>

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.google.android.material.textfield.TextInputEditText;
 
 public class NameInputActivity extends AppCompatActivity {
@@ -17,8 +18,9 @@ public class NameInputActivity extends AppCompatActivity {
         setContentView(R.layout.activity_name_input);
         TextInputEditText firstNameInput = (TextInputEditText) findViewById(R.id.textInputFirstName);
         TextInputEditText lastNameInput = (TextInputEditText) findViewById(R.id.textInputLastName);
-        Button button = (Button) findViewById(R.id.button3);
+        SwitchMaterial barcodeSwitch = (SwitchMaterial) findViewById(R.id.barcodeSwitch);
 
+        Button button = (Button) findViewById(R.id.button3);
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -26,6 +28,7 @@ public class NameInputActivity extends AppCompatActivity {
 
                 i.putExtra("firstName", firstNameInput.getText());
                 i.putExtra("lastName", lastNameInput.getText());
+                i.putExtra("includeBarcode", barcodeSwitch.isChecked());
                 startActivity(i);
             }
         });

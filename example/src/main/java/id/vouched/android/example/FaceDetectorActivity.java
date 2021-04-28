@@ -35,9 +35,11 @@ import java.util.TimerTask;
 import id.vouched.android.FaceDetect;
 import id.vouched.android.FaceDetectOptions;
 import id.vouched.android.FaceDetectResult;
+import id.vouched.android.Instruction;
 import id.vouched.android.Step;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.liveness.LivenessMode;
 import id.vouched.android.mlkit.GraphicOverlay;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
@@ -70,7 +72,7 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        faceDetect = new FaceDetect(this, FaceDetectOptions.defaultOptions(), this);
+        faceDetect = new FaceDetect(this, new FaceDetectOptions.Builder().withLivenessMode(LivenessMode.MOUTH_MOVEMENT).build(), this);
         cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_FRONT).build();
 
         setContentView(R.layout.activity_face_2);
@@ -134,7 +136,7 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
         TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
         textView.setTextSize(20);
         textView.setTextColor(Color.WHITE);
-        textView.setText(faceDetectResult.getInstruction().name());
+        textView.setText(getFeedbackLabel(faceDetectResult.getInstruction()));
 
         if (faceDetectResult.getStep() == Step.POSTABLE) {
             session.postFace(this, faceDetectResult, null, this);
@@ -142,6 +144,30 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
             if (cameraProvider != null) {
                 cameraProvider.unbindAll();
             }
+        }
+    }
+
+    private String getFeedbackLabel(Instruction instruction) {
+        switch (instruction) {
+            case BLINK_EYES:
+                return "Slowly Blink";
+            case MOVE_AWAY:
+                return "Move Away";
+            case MOVE_CLOSER:
+                return "Come Closer to Camera";
+            case LOOK_FORWARD:
+                return "Look Forward";
+            case CLOSE_MOUTH:
+                return "Close Mouth";
+            case OPEN_MOUTH:
+                return "Open Mouth";
+            case HOLD_STEADY:
+                return "Hold Steady";
+            case NO_FACE:
+                return "Show Face";
+            case NONE:
+            default:
+                return "";
         }
     }
 

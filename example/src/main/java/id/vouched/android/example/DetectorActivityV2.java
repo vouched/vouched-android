@@ -31,18 +31,20 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import id.vouched.android.BarcodeResult;
 import id.vouched.android.CardDetect;
 import id.vouched.android.CardDetectOptions;
 import id.vouched.android.CardDetectResult;
 import id.vouched.android.Instruction;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
 
-public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.OnDetectResultListener, VouchedSession.OnJobResponseListener {
+public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.OnDetectResultListener, CardDetect.OnBarcodeResultListener, VouchedSession.OnJobResponseListener {
 
     private static final int PERMISSION_REQUESTS = 1;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(1280, 960);
@@ -66,13 +68,19 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
     private HandlerThread handlerThread;
 
     private boolean posted = false;
+    private boolean onBarcodeStep = false;
+    private boolean includeBarcode = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Bundle bundle = getIntent().getExtras();
+        if (bundle != null) {
+            includeBarcode = (boolean) bundle.get("includeBarcode");
+        }
 
         session = new VouchedSession(BuildConfig.API_KEY, BuildConfig.API_URL);
-        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this);
+        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this, this);
         cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
         setContentView(R.layout.activity_id_2);
@@ -95,6 +103,7 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         if (!allPermissionsGranted()) {
             getRuntimePermissions();
         }
+
     }
 
     @Override
@@ -109,6 +118,10 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
 
     @Override
     public synchronized void onPause() {
+        if (cameraProvider != null) {
+            cameraProvider.unbindAll();
+        }
+
         handlerThread = new HandlerThread("inference");
         handlerThread.quitSafely();
         try {
@@ -121,29 +134,6 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
 
         super.onPause();
     }
-
-//    protected Consumer<CardDetectResult> handleCardDetectResult() {
-//        return (result) -> {
-////            System.out.println(result);
-//            switch (result.getStep()) {
-//                case PRE_DETECTED:
-//                case DETECTED:
-//                    runOnUiThread(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            updateText(result.getInstruction());
-//                        }
-//                    });
-//                    break;
-//                case POSTABLE:
-//                    if (!posted) {
-//                        posted = true;
-//                        processResult(result);
-//                    }
-//                    break;
-//            }
-//        };
-//    }
 
     @Override
     public void onCardDetectResult(CardDetectResult result) {
@@ -164,6 +154,18 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
                 }
                 break;
         }
+    }
+
+    @Override
+    public void onBarcodeResult(BarcodeResult barcodeResult) {
+        if (barcodeResult != null) {
+            onPause();
+            session.postBackId(this, barcodeResult, null, this);
+            setFeedbackText("Processing");
+        } else {
+            setFeedbackText("Focus camera on barcode");
+        }
+
     }
 
     private void bindAllCameraUseCases() {
@@ -209,7 +211,11 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
                 imageProxy -> {
                     try {
                         if (cardDetect != null) {
-                            cardDetect.processImageProxy(imageProxy, handler);
+                            if (onBarcodeStep) {
+                                cardDetect.findBarcode(imageProxy);
+                            } else {
+                                cardDetect.processImageProxy(imageProxy, handler);
+                            }
                         }
                     } catch (Exception e) {
                         System.out.println("Failed to process image. Error: " + e.getLocalizedMessage());
@@ -267,8 +273,33 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         setFeedbackText(s);
     }
 
+    protected String messageByInsight(Insight insight) {
+        switch (insight) {
+            case NON_GLARE:
+                return "has glare";
+            case QUALITY:
+                return "is blurry";
+            case BRIGHTNESS:
+                return "needs to be brighter";
+            case FIRST_NAME:
+                return "first name";
+            case LAST_NAME:
+                return "last name";
+            case EXPIRE_DATE:
+                return "id expiration date";
+            case BIRTH_DATE:
+                return "date of birth";
+            case ISSUE_DATE:
+                return "id issue date";
+            case FACE:
+                return "is missing required visual markers";
+            case UNKNOWN:
+            default:
+                return "No Error Message";
+        }
+    }
+
     protected void setFeedbackText(@NonNull final String s) {
-        //        TextView textView = (TextView) findViewById(R.id.textViewCardInstruction);
         TextView textView = (TextView) findViewById(R.id.textViewIdInstruction);
         textView.setTextSize(20);
         textView.setTextColor(Color.WHITE);
@@ -326,11 +357,10 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
 
         Job job = response.getJob();
         System.out.println(job.toJson());
-        List<RetryableError> retryableErrors = VouchedUtils.extractRetryableIdErrors(response.getJob());
 
-        if (retryableErrors.size() != 0) {
-            retryableErrors.forEach(System.out::println);
-            updateText(retryableErrors.get(0));
+        List<Insight> insights = VouchedUtils.extractInsights(response.getJob());
+        if (insights.size() != 0) {
+            setFeedbackText(messageByInsight(insights.get(0)));
 
             Timer timer = new Timer();
             timer.schedule(new TimerTask() {
@@ -340,10 +370,21 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
                 }
             }, 5000);
         } else {
-            onPause();
-            Intent i = new Intent(DetectorActivityV2.this, FaceDetectorActivity.class);
-            i.putExtra("Session", (Serializable) session);
-            startActivity(i);
+            if (includeBarcode && !onBarcodeStep) {
+                onBarcodeStep = true;
+                Timer timer = new Timer();
+                timer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(resumeCamera);
+                    }
+                }, 5000);
+            } else {
+                onPause();
+                Intent i = new Intent(DetectorActivityV2.this, FaceDetectorActivity.class);
+                i.putExtra("Session", (Serializable) session);
+                startActivity(i);
+            }
         }
 
     }
@@ -406,5 +447,4 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         System.out.println("Permission NOT granted: " + permission);
         return false;
     }
-
 }
