@@ -16,7 +16,7 @@
             android:id="@+id/textInputFirstName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="First Name" />
+            android:hint="First Name (Optional)" />
     </com.google.android.material.textfield.TextInputLayout>
 
 
@@ -33,15 +33,16 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="200dp"
 
-            android:hint="Last Name" />
+            android:hint="Last Name (Optional)" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.switchmaterial.SwitchMaterial
         android:id="@+id/barcodeSwitch"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textInputLastNameLayout"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp"
+        android:layout_marginTop="50dp"
         android:checked="false"
         android:text="Include Barcode"
         android:textColor="@color/tfe_color_primary" />
@@ -50,9 +51,9 @@
         android:id="@+id/button3"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
+        android:layout_below="@+id/barcodeSwitch"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="300dp"
+        android:layout_marginTop="50dp"
         android:background="@color/tfe_color_primary"
         android:padding="12dp"
         android:text="Next: ID Verification"

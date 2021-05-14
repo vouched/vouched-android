@@ -17,8 +17,9 @@ import id.vouched.android.model.JobResult;
 public class ResultsActivity extends AppCompatActivity {
     String resultName = "";
     boolean resultSuccess = false;
+    float resultId = 0f;
+    float resultSelfie = 0f;
     float resultFaceMatch = 0f;
-    float resultIdQuality = 0f;
     float resultNameMatch = 0f;
     ArrayList<String> arr = new ArrayList<String>();
 
@@ -47,28 +48,20 @@ public class ResultsActivity extends AppCompatActivity {
 
         if (jobResult.getFirstName() != null && jobResult.getLastName() != null)
             resultName = jobResult.getFirstName() + " " + jobResult.getLastName();
-        if (jobResult.getConfidences().getFaceMatch() != 0)
-            resultFaceMatch = jobResult.getConfidences().getFaceMatch();
-        if (jobResult.getConfidences().getIdQuality() != 0)
-            resultIdQuality = jobResult.getConfidences().getIdQuality();
-        if (job.getResult().getConfidences().getNameMatch() != 0)
-            resultNameMatch = jobResult.getConfidences().getNameMatch();
+
+        resultId = jobResult.getConfidences().getId();
+        resultSelfie = jobResult.getConfidences().getSelfie();
+        resultFaceMatch = jobResult.getConfidences().getFaceMatch();
+        resultNameMatch = jobResult.getConfidences().getNameMatch();
         populateArray();
     }
 
     protected void populateArray() {
-        if (resultSuccess) {
-            arr.add("true");
-            arr.add("true");
-            arr.add("true");
-        } else {
-            arr.add("false");
-            arr.add("false");
-            arr.add("false");
-        }
+        arr.add(resultId < 0.9 ? "false" : "true");
+        arr.add(resultSelfie < 0.9 ? "false" : "true");
+        arr.add(resultSuccess ? "true" : "false");
         arr.add(resultName);
-        arr.add(Float.toString(resultFaceMatch));
-        arr.add(Float.toString(resultIdQuality));
+        arr.add(resultFaceMatch < 0.9 ? "false" : "true");
 
         populateTable();
     }
@@ -116,7 +109,7 @@ public class ResultsActivity extends AppCompatActivity {
         textView_4.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         textView_4.setText(output_4);
 
-        if (resultNameMatch > 0.8) {
+        if (resultNameMatch >= 0.9) {
             imageView_4.setImageResource(R.drawable.check);
         } else {
             imageView_4.setImageResource(R.drawable.x);
@@ -124,28 +117,15 @@ public class ResultsActivity extends AppCompatActivity {
 
         TextView textView_5 = (TextView) findViewById(R.id.textView_5);
         ImageView imageView_5 = (ImageView) findViewById(R.id.imageView_5);
-        String output_5 = "Face Match Result - " + arr.get(4);
+        String output_5 = "Face Match - " + arr.get(4);
         textView_5.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
         textView_5.setText(output_5);
 
-        if (resultFaceMatch > 0.7) {
+        if (resultFaceMatch >= 0.9) {
             imageView_5.setImageResource(R.drawable.check);
         } else {
             imageView_5.setImageResource(R.drawable.x);
         }
-
-        TextView textView_6 = (TextView) findViewById(R.id.textView_6);
-        ImageView imageView_6 = (ImageView) findViewById(R.id.imageView_6);
-        String output_6 = "Id Quality Result - " + arr.get(5);
-        textView_6.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-        textView_6.setText(output_6);
-        if (resultIdQuality > 0.4) {
-            imageView_6.setImageResource(R.drawable.check);
-        } else {
-            imageView_6.setImageResource(R.drawable.x);
-        }
-
     }
-
 
 }

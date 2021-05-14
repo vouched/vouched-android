@@ -41,9 +41,9 @@ import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
 import id.vouched.android.liveness.LivenessMode;
 import id.vouched.android.mlkit.GraphicOverlay;
+import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
-import id.vouched.android.model.RetryableError;
 
 
 @RequiresApi(VERSION_CODES.LOLLIPOP)
@@ -131,12 +131,16 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
         }
     }
 
-    @Override
-    public void onFaceDetectResult(FaceDetectResult faceDetectResult) {
+    protected void setFeedbackText(@NonNull final String s) {
         TextView textView = (TextView) findViewById(R.id.textViewFaceInstruction);
         textView.setTextSize(20);
         textView.setTextColor(Color.WHITE);
-        textView.setText(getFeedbackLabel(faceDetectResult.getInstruction()));
+        textView.setText(s);
+    }
+
+    @Override
+    public void onFaceDetectResult(FaceDetectResult faceDetectResult) {
+        setFeedbackText(getFeedbackLabel(faceDetectResult.getInstruction()));
 
         if (faceDetectResult.getStep() == Step.POSTABLE) {
             session.postFace(this, faceDetectResult, null, this);
@@ -171,6 +175,24 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
         }
     }
 
+    protected String messageByInsight(Insight insight) {
+        switch (insight) {
+            case NON_GLARE:
+                return "image has glare";
+            case QUALITY:
+                return "image is blurry";
+            case BRIGHTNESS:
+                return "image needs to be brighter";
+            case FACE:
+                return "image is missing required visual markers";
+            case GLASSES:
+                return "please take off your glasses";
+            case UNKNOWN:
+            default:
+                return "Unknown Error";
+        }
+    }
+
     @Override
     public void onJobResponse(JobResponse response) {
         faceDetect.reset();
@@ -180,9 +202,9 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
         } else {
             Job job = response.getJob();
             System.out.println(job.toJson());
-            List<RetryableError> retryableErrors = VouchedUtils.extractRetryableFaceErrors(job);
-            if (!retryableErrors.isEmpty()) {
-                retryableErrors.forEach(System.out::println);
+            List<Insight> insights = VouchedUtils.extractInsights(response.getJob());
+            if (insights.size() != 0) {
+                setFeedbackText(messageByInsight(insights.get(0)));
 
                 Timer timer = new Timer();
                 Runnable resume = new Runnable() {

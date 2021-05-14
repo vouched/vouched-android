@@ -97,22 +97,5 @@
                 android:padding="10dip" />
         </TableRow>
 
-        <TableRow>
-
-            <TextView
-                android:id="@+id/textView_6"
-                android:layout_column="1"
-                android:padding="10dip"
-                android:text="Valid ID - " />
-
-            <ImageView
-                android:id="@+id/imageView_6"
-                android:layout_width="50dp"
-                android:layout_height="50dp"
-                android:gravity="right"
-                android:padding="10dip" />
-        </TableRow>
-
-
     </TableLayout>
 </RelativeLayout>

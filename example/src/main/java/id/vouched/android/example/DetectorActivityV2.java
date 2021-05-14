@@ -37,17 +37,18 @@ import id.vouched.android.CardDetectOptions;
 import id.vouched.android.CardDetectResult;
 import id.vouched.android.Instruction;
 import id.vouched.android.VouchedSession;
+import id.vouched.android.VouchedSessionParameters;
 import id.vouched.android.VouchedUtils;
 import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
-import id.vouched.android.model.RetryableError;
 
 public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.OnDetectResultListener, CardDetect.OnBarcodeResultListener, VouchedSession.OnJobResponseListener {
 
     private static final int PERMISSION_REQUESTS = 1;
-    private static final Size DESIRED_PREVIEW_SIZE = new Size(1280, 960);
+    private static final Size DESIRED_PREVIEW_SIZE = new Size(720, 1280);
+    private static final Size DESIRED_PREVIEW_BARCODE_SIZE = new Size(1080, 1920);
 
     private PreviewView previewView;
 
@@ -79,7 +80,7 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
             includeBarcode = (boolean) bundle.get("includeBarcode");
         }
 
-        session = new VouchedSession(BuildConfig.API_KEY, BuildConfig.API_URL);
+        session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build());
         cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this, this);
         cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
@@ -186,7 +187,7 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         }
 
         Preview.Builder builder = new Preview.Builder();
-        builder.setTargetResolution(DESIRED_PREVIEW_SIZE);
+        builder.setTargetResolution(!onBarcodeStep ? DESIRED_PREVIEW_SIZE : DESIRED_PREVIEW_BARCODE_SIZE);
         previewUseCase = builder.build();
         previewUseCase.setSurfaceProvider(previewView.getSurfaceProvider());
 
@@ -203,7 +204,7 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         }
 
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
-        builder.setTargetResolution(DESIRED_PREVIEW_SIZE);
+        builder.setTargetResolution(!onBarcodeStep ? DESIRED_PREVIEW_SIZE : DESIRED_PREVIEW_BARCODE_SIZE);
         analysisUseCase = builder.build();
 
         analysisUseCase.setAnalyzer(
@@ -228,7 +229,7 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
     }
 
     protected void updateText(Instruction instruction) {
-        System.out.println(instruction);
+//        System.out.println(instruction);
         String s = "";
 
         switch (instruction) {
@@ -252,50 +253,22 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         setFeedbackText(s);
     }
 
-    protected void updateText(RetryableError retryableErrors) {
-        String s = "";
-
-        switch (retryableErrors) {
-            case InvalidIdPhotoError:
-                s = "Invalid Photo ID";
-                break;
-            case InvalidUserPhotoError:
-                s = "Invalid Selfie";
-                break;
-            case GlareIdPhotoError:
-                s = "ID has glare";
-                break;
-            case BlurryIdPhotoError:
-                s = "Blurry ID";
-                break;
-        }
-
-        setFeedbackText(s);
-    }
 
     protected String messageByInsight(Insight insight) {
         switch (insight) {
             case NON_GLARE:
-                return "has glare";
+                return "image has glare";
             case QUALITY:
-                return "is blurry";
+                return "image is blurry";
             case BRIGHTNESS:
-                return "needs to be brighter";
-            case FIRST_NAME:
-                return "first name";
-            case LAST_NAME:
-                return "last name";
-            case EXPIRE_DATE:
-                return "id expiration date";
-            case BIRTH_DATE:
-                return "date of birth";
-            case ISSUE_DATE:
-                return "id issue date";
+                return "image needs to be brighter";
             case FACE:
-                return "is missing required visual markers";
+                return "image is missing required visual markers";
+            case GLASSES:
+                return "please take off your glasses";
             case UNKNOWN:
             default:
-                return "No Error Message";
+                return "Unknown Error";
         }
     }
 
