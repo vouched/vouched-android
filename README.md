@@ -75,6 +75,11 @@ VouchedSession session = new VouchedSession("PUBLIC_KEY");
 | -------------- | :------: |
 | String         |  false   |
 
+##### Initializing with token
+```java
+VouchedSession session = new VouchedSession("PUBLIC_KEY", new VouchedSessionParameters.Builder().withToken("TOKEN").build());
+```
+        
 ##### POST Front Id image
 
 ```java
