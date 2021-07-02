@@ -40,7 +40,6 @@ import id.vouched.android.Step;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
 import id.vouched.android.liveness.LivenessMode;
-import id.vouched.android.mlkit.GraphicOverlay;
 import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
@@ -51,7 +50,6 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
     private static final int PERMISSION_REQUESTS = 1;
 
     private PreviewView previewView;
-    private GraphicOverlay graphicOverlay;
 
     @Nullable
     private ProcessCameraProvider cameraProvider;
@@ -62,8 +60,6 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
 
     @Nullable
     private FaceDetect faceDetect;
-
-    private boolean needUpdateGraphicOverlayImageSourceInfo;
 
     private CameraSelector cameraSelector;
     private VouchedSession session;
@@ -80,11 +76,6 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
         if (previewView == null) {
             System.out.println("previewView is null");
         }
-        graphicOverlay = findViewById(R.id.graphic_overlay);
-        if (graphicOverlay == null) {
-            System.out.println("graphicOverlay is null");
-        }
-
 
         new ViewModelProvider(this, AndroidViewModelFactory.getInstance(getApplication()))
                 .get(CameraXViewModel.class)
@@ -265,26 +256,12 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
         ImageAnalysis.Builder builder = new ImageAnalysis.Builder();
         analysisUseCase = builder.build();
 
-        needUpdateGraphicOverlayImageSourceInfo = true;
         analysisUseCase.setAnalyzer(
                 ContextCompat.getMainExecutor(this),
                 imageProxy -> {
-                    if (needUpdateGraphicOverlayImageSourceInfo) {
-                        int rotationDegrees = imageProxy.getImageInfo().getRotationDegrees();
-                        if (graphicOverlay != null) {
-                            if (rotationDegrees == 0 || rotationDegrees == 180) {
-                                graphicOverlay.setImageSourceInfo(
-                                        imageProxy.getWidth(), imageProxy.getHeight(), true);
-                            } else {
-                                graphicOverlay.setImageSourceInfo(
-                                        imageProxy.getHeight(), imageProxy.getWidth(), true);
-                            }
-                        }
-                        needUpdateGraphicOverlayImageSourceInfo = false;
-                    }
                     try {
                         if (faceDetect != null) {
-                            faceDetect.processImageProxy(imageProxy, graphicOverlay);
+                            faceDetect.processImageProxy(imageProxy, null);
                         }
                     } catch (Exception e) {
                         System.out.println("Failed to process image. Error: " + e.getLocalizedMessage());

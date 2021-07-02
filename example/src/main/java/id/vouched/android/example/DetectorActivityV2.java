@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import id.vouched.android.BarcodeDetect;
 import id.vouched.android.BarcodeResult;
 import id.vouched.android.CardDetect;
 import id.vouched.android.CardDetectOptions;
@@ -44,7 +45,7 @@ import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
 
-public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.OnDetectResultListener, CardDetect.OnBarcodeResultListener, VouchedSession.OnJobResponseListener {
+public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.OnDetectResultListener, BarcodeDetect.OnBarcodeResultListener, VouchedSession.OnJobResponseListener {
 
     private static final int PERMISSION_REQUESTS = 1;
     private static final Size DESIRED_PREVIEW_SIZE = new Size(720, 1280);
@@ -61,6 +62,8 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
 
     @Nullable
     private CardDetect cardDetect;
+    @Nullable
+    private BarcodeDetect barcodeDetect;
 
     private CameraSelector cameraSelector;
     private VouchedSession session;
@@ -78,10 +81,13 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         Bundle bundle = getIntent().getExtras();
         if (bundle != null) {
             includeBarcode = (boolean) bundle.get("includeBarcode");
+            if (includeBarcode) {
+                barcodeDetect = new BarcodeDetect(this);
+            }
         }
 
         session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build());
-        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this, this);
+        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this);
         cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
         setContentView(R.layout.activity_id_2);
@@ -211,12 +217,12 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
                 ContextCompat.getMainExecutor(this),
                 imageProxy -> {
                     try {
-                        if (cardDetect != null) {
-                            if (onBarcodeStep) {
-                                cardDetect.findBarcode(imageProxy);
-                            } else {
+                        if (onBarcodeStep) {
+                            if (barcodeDetect != null)
+                                barcodeDetect.findBarcode(imageProxy);
+                        } else {
+                            if (cardDetect != null)
                                 cardDetect.processImageProxy(imageProxy, handler);
-                            }
                         }
                     } catch (Exception e) {
                         System.out.println("Failed to process image. Error: " + e.getLocalizedMessage());

@@ -21,6 +21,11 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.ObjectDetection">
+
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="face,barcode" />
+
         <activity android:name="id.vouched.android.example.ResultsActivity" />
         <activity android:name="id.vouched.android.example.MainActivity">
             <intent-filter>

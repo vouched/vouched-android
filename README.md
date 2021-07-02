@@ -23,10 +23,34 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 
 ## Install
 
-Add the package to your existing project
+#### Add the package to your existing project
 
 ```shell
 implementation 'id.vouched.android:vouched-sdk:VOUCHED_VERSION'
+```
+
+#### (Optional) Add barcode scanning
+In order to use [BarcodeDetect](#barcodedetect), you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
+Note: you can choose between the bundled and unbundled model.
+```shell
+
+// Use this dependency to bundle the model with your app
+implementation 'com.google.mlkit:barcode-scanning:16.2.0'  
+
+// Use this dependency to use the dynamically downloaded model in Google Play Services
+implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.0'
+```
+
+#### (Optional) Add face detection
+In order to use [FaceDetect](#facedetect), you must add [ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection/android).  
+Note: you can choose between the bundled and unbundled model.
+```shell
+
+// Use this dependency to bundle the model with your app
+implementation 'com.google.mlkit:face-detection:16.1.2'  
+
+// Use this dependency to use the dynamically downloaded model in Google Play Services
+implementation 'com.google.android.gms:play-services-mlkit-face-detection:16.2.0'
 ```
 
 ## Getting Started
@@ -145,6 +169,30 @@ cardDetect.processImageProxy(imageProxy, handler);
 | androidx.camera.core.ImageProxy |  false   |
 | android.os.Handler              |  false   |
 
+### BarcodeDetect
+
+This class handles detecting the encoded barcode data. Only applicable for ID and DL cards.
+
+##### Initialize
+
+```java
+BarcodeDetect barcodeDetect = new BarcodeDetect(this);
+```
+
+| Parameter Type                                                 | Nullable |
+| -------------------------------------------------------------- | :------: |
+| [BarcodeDetect.OnBarcodeResultListener](#barcodedetectresultlistener) |  false   |
+
+##### Process Image
+
+```java
+cardDetect.findBarcode(imageProxy);
+```
+
+| Parameter Type                  | Nullable |
+| ------------------------------- | :------: |
+| androidx.camera.core.ImageProxy |  false   |
+
 ### FaceDetect
 
 This class handles detecting a face and performing necessary steps to ensure image is POSTABLE.
@@ -187,6 +235,18 @@ class CardDetectResult {
     public String getImage() { ... }
 
     public String getDistanceImage() { ... }
+}
+```
+
+##### BarcodeDetectResult
+
+The output from [Barcode Detection](#barcodedetect) and used to submit the encoded Barcode data.
+
+```java
+class BarcodeResult {
+    public String getValue() { ... }
+
+    public String getImage() { ... }
 }
 ```
 
@@ -272,7 +332,17 @@ The listener to retrieve [CardDetectResult](#carddetectresult).
 
 ```java
 interface OnDetectResultListener {
-    void onFaceDetectResult(CardDetectResult cardDetectResult);
+    void onCardDetectResult(CardDetectResult cardDetectResult);
+}
+```
+
+##### BarcodeDetectResultListener
+
+The listener to retrieve [BarcodeDetectResult](#barcodedetectresult).
+
+```java
+interface OnBarcodeResultListener {
+    void onBarcodeResult(BarcodeResult barcodeResult);
 }
 ```
 

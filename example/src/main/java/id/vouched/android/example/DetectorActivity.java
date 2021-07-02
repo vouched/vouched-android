@@ -542,7 +542,9 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
 
         if (retryableErrors.size() != 0) {
             System.out.println("Inside OnError - " + retryableErrors.size());
-            retryableErrors.forEach(System.out::println);
+            for (RetryableError retryableError : retryableErrors) {
+                System.out.println(retryableError);
+            }
             updateText(retryableErrors.get(0));
 
             Timer timer = new Timer();
