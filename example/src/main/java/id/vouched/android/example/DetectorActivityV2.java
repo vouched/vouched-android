@@ -40,6 +40,7 @@ import id.vouched.android.Instruction;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedSessionParameters;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.cameraHelper.CameraXViewModel;
 import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;

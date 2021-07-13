@@ -39,6 +39,7 @@ import id.vouched.android.Instruction;
 import id.vouched.android.Step;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.cameraHelper.CameraXViewModel;
 import id.vouched.android.liveness.LivenessMode;
 import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
@@ -135,7 +136,6 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
 
         if (faceDetectResult.getStep() == Step.POSTABLE) {
             session.postFace(this, faceDetectResult, null, this);
-
             if (cameraProvider != null) {
                 cameraProvider.unbindAll();
             }
