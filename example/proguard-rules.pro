@@ -6,3 +6,4 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 -keepclassmembers class id.vouched.android.model.* { *; }
+-keepclassmembers class id.vouched.android.event.* { *; }

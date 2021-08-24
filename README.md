@@ -33,6 +33,7 @@ implementation 'id.vouched.android:vouched-sdk:VOUCHED_VERSION'
 
 ```
 -keepclassmembers class id.vouched.android.model.* { *; }
+-keepclassmembers class id.vouched.android.event.* { *; }
 ```
 
 #### (Optional) Add barcode scanning
