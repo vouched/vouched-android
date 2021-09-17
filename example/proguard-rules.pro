@@ -5,5 +5,4 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
--keepclassmembers class id.vouched.android.model.* { *; }
--keepclassmembers class id.vouched.android.event.* { *; }
+# No need to setup the vouched-specific ProGuard rules in the app module's file.

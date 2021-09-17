@@ -32,6 +32,7 @@ import id.vouched.android.VouchedCameraHelperOptions;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedSessionParameters;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.exception.VouchedAssetsMissingException;
 import id.vouched.android.exception.VouchedCameraHelperException;
 import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
@@ -61,14 +62,18 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         setContentView(R.layout.activity_id_ex);
         previewView = findViewById(R.id.preview_view);
 
-        session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build(), BuildConfig.API_URL);
-        cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
-                .withCardDetectOptions(new CardDetectOptions.Builder()
-                        .withEnableDistanceCheck(false)
-                        .build())
-                .withCardDetectResultListener(this)
-                .withBarcodeDetectResultListener(this)
-                .build());
+        session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build());
+        try {
+            cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
+                    .withCardDetectOptions(new CardDetectOptions.Builder()
+                            .withEnableDistanceCheck(false)
+                            .build())
+                    .withCardDetectResultListener(this)
+                    .withBarcodeDetectResultListener(this)
+                    .build());
+        } catch (VouchedAssetsMissingException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -161,7 +166,11 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         } else {
             if (includeBarcode && !onBarcodeStep) {
                 onBarcodeStep = true;
-                cameraHelper.switchMode(VouchedCameraHelper.Mode.BARCODE);
+                try {
+                    cameraHelper.switchMode(VouchedCameraHelper.Mode.BARCODE);
+                } catch (VouchedAssetsMissingException e) {
+                    e.printStackTrace();
+                }
                 Timer timer = new Timer();
                 timer.schedule(new TimerTask() {
                     @Override

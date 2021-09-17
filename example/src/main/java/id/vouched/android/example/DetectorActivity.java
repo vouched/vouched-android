@@ -66,6 +66,7 @@ import id.vouched.android.customview.OverlayView;
 import id.vouched.android.customview.OverlayView.DrawCallback;
 import id.vouched.android.env.BorderedText;
 import id.vouched.android.env.ImageUtils;
+import id.vouched.android.exception.VouchedAssetsMissingException;
 import id.vouched.android.model.JobResponse;
 import id.vouched.android.model.Params;
 import id.vouched.android.model.RetryableError;
@@ -116,8 +117,12 @@ public class DetectorActivity extends AppCompatActivity implements OnImageAvaila
         super.onCreate(null);
         setContentView(R.layout.tfe_od_activity_camera);
 
-        session = new VouchedSession(BuildConfig.API_KEY, BuildConfig.API_URL);
-        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
+        session = new VouchedSession(BuildConfig.API_KEY);
+        try {
+            cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
+        } catch (VouchedAssetsMissingException e) {
+            e.printStackTrace();
+        }
 
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
