@@ -29,13 +29,6 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 implementation 'id.vouched.android:vouched-sdk:VOUCHED_VERSION'
 ```
 
-#### Update proguard rules
-
-```
--keepclassmembers class id.vouched.android.model.* { *; }
--keepclassmembers class id.vouched.android.event.* { *; }
-```
-
 #### (Optional) Add barcode scanning
 In order to use [BarcodeDetect](#barcodedetect), you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
 Note: you can choose between the bundled and unbundled model.

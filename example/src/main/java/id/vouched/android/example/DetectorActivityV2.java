@@ -41,6 +41,7 @@ import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedSessionParameters;
 import id.vouched.android.VouchedUtils;
 import id.vouched.android.cameraHelper.CameraXViewModel;
+import id.vouched.android.exception.VouchedAssetsMissingException;
 import id.vouched.android.model.Insight;
 import id.vouched.android.model.Job;
 import id.vouched.android.model.JobResponse;
@@ -88,7 +89,11 @@ public class DetectorActivityV2 extends AppCompatActivity implements CardDetect.
         }
 
         session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build());
-        cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this);
+        try {
+            cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(false).build(), this);
+        } catch (VouchedAssetsMissingException e) {
+            e.printStackTrace();
+        }
         cameraSelector = new CameraSelector.Builder().requireLensFacing(CameraSelector.LENS_FACING_BACK).build();
 
         setContentView(R.layout.activity_id_2);

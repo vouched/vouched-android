@@ -24,6 +24,7 @@ import id.vouched.android.VouchedCameraHelper;
 import id.vouched.android.VouchedCameraHelperOptions;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.exception.VouchedAssetsMissingException;
 import id.vouched.android.exception.VouchedCameraHelperException;
 import id.vouched.android.liveness.LivenessMode;
 import id.vouched.android.model.Insight;
@@ -44,12 +45,16 @@ public class FaceDetectorActivityWithHelper extends AppCompatActivity implements
         setContentView(R.layout.activity_face_2);
         previewView = findViewById(R.id.preview_view);
 
-        cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.FACE, new VouchedCameraHelperOptions.Builder()
-                .withFaceDetectOptions(new FaceDetectOptions.Builder()
-                        .withLivenessMode(LivenessMode.MOUTH_MOVEMENT)
-                        .build())
-                .withFaceDetectResultListener(this)
-                .build());
+        try {
+            cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.FACE, new VouchedCameraHelperOptions.Builder()
+                    .withFaceDetectOptions(new FaceDetectOptions.Builder()
+                            .withLivenessMode(LivenessMode.MOUTH_MOVEMENT)
+                            .build())
+                    .withFaceDetectResultListener(this)
+                    .build());
+        } catch (VouchedAssetsMissingException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override

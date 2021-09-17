@@ -18,7 +18,7 @@ When you finish, Vouched has performed the following features to verify your ide
 
 ### IDE
 
-We suggest to use [Android Studio](https://developer.android.com/studio) to run and modify the Example.
+We suggest to use [Android Studio](https://developer.android.com/studio) to run and modify the Example. Switch to the [Project View](https://developer.android.com/studio/projects#ProjectView) in order to view all the files associated with the project.
 
 ### Environment
 
