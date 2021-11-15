@@ -43,7 +43,7 @@ implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:16.2
 
 #### (Optional) Add face detection
 In order to use [FaceDetect](#facedetect), you must add [ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection/android).  
-Note: you can choose between the bundled and unbundled model.
+Note: you can choose between the bundled and unbundled model. The unbundled model will provide a smaller app footprint, but will require connectivity to download the model when verification is run.
 ```shell
 
 // Use this dependency to bundle the model with your app
@@ -55,7 +55,7 @@ implementation 'com.google.android.gms:play-services-mlkit-face-detection:16.2.0
 
 ## Getting Started
 
-This section will provide a _step-by-step_ to understand the Vouched SDK through the Example.
+This section will provide a _step-by-step_ path to understand the Vouched SDK through the Example.
 
 0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
 
@@ -80,6 +80,32 @@ This section will provide a _step-by-step_ to understand the Vouched SDK through
 4. You are ready to integrate Vouched SDK into your app
 
 ## Reference
+
+### VouchedCameraHelper
+
+This class is introduced to make it easier for developers to integrate VouchedSDK and provide the optimal photography. The helper takes care of configuring the capture session, input, and output. Helper has following modes: 'ID' | 'FACE' | 'BARCODE'
+
+##### Initialize
+
+```java
+VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
+                .withCardDetectOptions(new CardDetectOptions.Builder()
+                        .withEnableDistanceCheck(false)
+                        .build())
+                .withCardDetectResultListener(this)
+                .withBarcodeDetectResultListener(this)
+                .build());
+```
+
+| Parameter Type                      | Nullable |
+| --------------                      | :------: |
+| android.content.Context             |  false   |
+| androidx.lifecycle.LifecycleOwner   |  false   |
+| java.util.concurrent.Executor       |  false   |
+| androidx.camera.view.PreviewView    |  false   |
+| [VouchedCameraHelper.Mode](#vouchedcamerahelpermode)          |  false   |
+| [VouchedCameraHelper.Options](#vouchedcamerahelperoptions)          |  false   |
+
 
 ### CameraX
 
@@ -236,6 +262,32 @@ class CardDetectResult {
 
     public String getDistanceImage() { ... }
 }
+```
+
+##### VouchedCameraHelperMode
+
+An enum to provide mode for [VouchedCameraHelper](#vouchedcamerahelper)
+
+```java
+enum Mode {
+        ID,
+        BARCODE,
+        FACE
+    }
+```
+
+##### VouchedCameraHelperOptions
+
+List of options to alter image processing for [VouchedCameraHelper](#vouchedcamerahelper)
+
+```java
+    VouchedCameraHelperOptions cameraOptions = new VouchedCameraHelperOptions.Builder()
+                .withFaceDetectOptions(new FaceDetectOptions.Builder()
+                        .withLivenessMode(LivenessMode.MOUTH_MOVEMENT)
+                        .build())
+                .withFaceDetectResultListener(this)
+                .build());
+
 ```
 
 ##### BarcodeDetectResult

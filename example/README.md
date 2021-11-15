@@ -24,9 +24,9 @@ We suggest to use [Android Studio](https://developer.android.com/studio) to run 
 
 1. If necessary, navigate to your Vouched Dashboard and create a [Public Key](https://docs.vouched.id/#section/Dashboard/Manage-keys).
 2. Create gradle.properties
+3. Expose the key in your gradle app module
 
 ```
-android.useAndroidX=true
 API_KEY="<PUBLIC_KEY>"
 ```
 
