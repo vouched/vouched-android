@@ -79,6 +79,13 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
    Better images lead to better results from Vouched AI
 4. You are ready to integrate Vouched SDK into your app
 
+## UX Considerations
+
+Your users will have a higher success rate if they understand the tasks they are to perform. Consider providing guidance in your application to help them. This example app uses a simple overlay to provide guidance as how to optimally place an ID document, but you might consider informing the user of the following:
+- Lay ID on a flat surface
+- Minimize glare
+- Try not to tilt the phone relative to the ID
+
 ## Reference
 
 ### VouchedCameraHelper
