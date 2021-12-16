@@ -19,6 +19,12 @@
         app:layout_constraintBottom_toTopOf="@+id/control"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <id.vouched.android.example.IdGuideOverlay
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/control"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@id/control"
         android:layout_width="match_parent"
