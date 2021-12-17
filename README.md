@@ -85,7 +85,7 @@ Your users will have a higher success rate if they understand the tasks they are
 - Lay ID on a flat surface
 - Well lit area
 - Minimize glare
-- Try not to tilt the phone relative to the ID
+- Keep the phone level relative to the ID
 
 ## Reference
 
