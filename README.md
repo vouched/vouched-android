@@ -1,8 +1,5 @@
 # Vouched
 
-[![GitHub release](https://img.shields.io/github/release/vouched/vouched-android.svg?maxAge=60)](https://github.com/vouched/vouched-android/releases)
-[![License](https://img.shields.io/github/license/vouched/vouched-android)](https://github.com/vouched/vouched-android/blob/master/LICENSE)
-
 ## Run Example
 
 Clone this repo and change directory to _example_
@@ -26,31 +23,33 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:VOUCHED_VERSION'
+implementation 'id.vouched.android:vouched-sdk:0.5.0'
 ```
 
 #### (Optional) Add barcode scanning
 In order to use [BarcodeDetect](#barcodedetect), you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
-Note: you can choose between the bundled and unbundled model.
+Note: you can choose between the bundled and unbundled model. Our experience is that the bundled model provides  more accurate barcode scans. See the above ML Kit link for more information
+
 ```shell
 
 // Use this dependency to bundle the model with your app
-implementation 'com.google.mlkit:barcode-scanning:16.2.0'  
+implementation 'com.google.mlkit:barcode-scanning:17.0.2'  
 
 // Use this dependency to use the dynamically downloaded model in Google Play Services
-implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:16.2.0'
+implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.0'
 ```
 
 #### (Optional) Add face detection
 In order to use [FaceDetect](#facedetect), you must add [ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection/android).  
-Note: you can choose between the bundled and unbundled model. The unbundled model will provide a smaller app footprint, but will require connectivity to download the model when verification is run.
+Note: you can choose between the bundled and unbundled model. The unbundled model will provide a smaller app footprint, but will require connectivity to download the model when verification is run or when the app is first installed. 
+
 ```shell
 
 // Use this dependency to bundle the model with your app
-implementation 'com.google.mlkit:face-detection:16.1.2'  
+implementation 'com.google.mlkit:face-detection:16.1.4'  
 
 // Use this dependency to use the dynamically downloaded model in Google Play Services
-implementation 'com.google.android.gms:play-services-mlkit-face-detection:16.2.0'
+implementation 'com.google.android.gms:play-services-mlkit-face-detection:17.0.0'
 ```
 
 ## Getting Started
@@ -79,14 +78,6 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
    Better images lead to better results from Vouched AI
 4. You are ready to integrate Vouched SDK into your app
 
-## UX Considerations
-
-Your users will have a higher success rate if they understand the tasks they are to perform. Consider providing guidance in your application to help them. This example app uses a simple overlay to provide guidance as how to optimally place an ID document, but you might consider informing the user of the following:
-- Lay ID on a flat surface
-- Well lit area
-- Minimize glare
-- Keep the phone level relative to the ID
-
 ## Reference
 
 ### VouchedCameraHelper
@@ -99,9 +90,11 @@ This class is introduced to make it easier for developers to integrate VouchedSD
 VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
                 .withCardDetectOptions(new CardDetectOptions.Builder()
                         .withEnableDistanceCheck(false)
+                        .withEnhanceInfoExtraction(false)            
                         .build())
                 .withCardDetectResultListener(this)
                 .withBarcodeDetectResultListener(this)
+                .withCameraFlashDisabled(true)
                 .build());
 ```
 
@@ -137,7 +130,7 @@ VouchedSession session = new VouchedSession("PUBLIC_KEY");
 ```java
 VouchedSession session = new VouchedSession("PUBLIC_KEY", new VouchedSessionParameters.Builder().withToken("TOKEN").build());
 ```
-        
+
 ##### POST Front Id image
 
 ```java
@@ -381,6 +374,7 @@ The options for [Card Detection](#carddetect).
 ```java
 class Builder {
     public Builder withEnableDistanceCheck(boolean enableDistanceCheck) { ... }
+    public Builder withEnhanceInfoExtraction(boolean enableEnhancedIdScan) { ... }
 
     public CardDetectOptions build() { ... }
 }
