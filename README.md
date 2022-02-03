@@ -20,6 +20,8 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 - An account with Vouched
 - Your Vouched Public Key
 - Mobile Assets (available on the dashboard)
+- [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android) for barcode detection and for the enhanced info extraction feature of ID detection
+-  [ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection/android) for face detection
 
 ## Install
 
@@ -30,7 +32,7 @@ implementation 'id.vouched.android:vouched-sdk:0.5.0'
 ```
 
 #### (Optional) Add barcode scanning
-In order to use [BarcodeDetect](#barcodedetect), you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
+In order to use [BarcodeDetect](#barcodedetect), or the enhanced into extraction feature for ID detection, you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
 Note: you can choose between the bundled and unbundled model. Our experience is that the bundled model provides  more accurate barcode scans. See the above ML Kit link for more information
 
 ```shell
@@ -175,11 +177,15 @@ session.confirm(this, null, this);
 ### CardDetect
 
 This class handles detecting an ID (cards and passports) and performing necessary steps to ensure image is POSTABLE.
+Note: Use of withEnhanceInfoExtraction requires the 
 
 ##### Initialize
 
 ```java
-CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
+CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder()
+                                       .withEnableDistanceCheck(true)
+                                       .withEnhanceInfoExtraction(true)
+                                       .build(), this);
 ```
 
 | Parameter Type                                                 | Nullable |
