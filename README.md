@@ -1,5 +1,8 @@
 # Vouched
 
+[![GitHub release](https://img.shields.io/github/release/vouched/vouched-android.svg?maxAge=60)](https://github.com/vouched/vouched-android/releases)
+[![License](https://img.shields.io/github/license/vouched/vouched-android)](https://github.com/vouched/vouched-android/blob/master/LICENSE)
+
 ## Run Example
 
 Clone this repo and change directory to _example_
@@ -403,6 +406,17 @@ interface OnBarcodeResultListener {
 ##### FaceDetectOptions
 
 The options for [Face Detection](#facedetect).
+
+```java
+public enum LivenessMode {
+    MOUTH_MOVEMENT,
+    DISTANCE,
+    BLINKING,
+    NONE
+}
+```
+
+
 
 ```java
 class Builder {

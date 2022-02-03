@@ -67,9 +67,11 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
                     .withCardDetectOptions(new CardDetectOptions.Builder()
                             .withEnableDistanceCheck(false)
+                            .withEnhanceInfoExtraction(false)
                             .build())
                     .withCardDetectResultListener(this)
                     .withBarcodeDetectResultListener(this)
+                    .withCameraFlashDisabled(true)
                     .build());
         } catch (VouchedAssetsMissingException e) {
             e.printStackTrace();
