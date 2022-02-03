@@ -4,4 +4,6 @@
 
 #### Added
 - Ability to disable camera torch
-- CardDetect.withEnhanceInfoExtraction
+- withEnhanceInfoExtraction added to ID detection (CardDetect)
+- Tighter cropping of IDs that are detected
+- 'move away' instruction when too close to ID
