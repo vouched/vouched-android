@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.5.0](https://github.com/vouched/vouched-android/compare/v.0.5.0...v0.5.1) - 2022-2-10
+## [0.5.1](https://github.com/vouched/vouched-android/compare/v.0.5.0...v0.5.1) - 2022-2-10
 
 #### Added
 - Cropping of IDs requires less memory
