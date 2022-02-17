@@ -115,7 +115,8 @@ The camera helper can increase your verification abilities by recognizing additi
 
 Once enabled, the helper can help guide the ID verification modes by processing job results returned by the Vouched api service, and generating the appropriate modes that are needed to complete ID verification. 
 
-In the current release, on your JobResonseListener callback, you pass the camera helper the response by calling the 
+In the current release, on your JobResonseListener callback, you pass the camera helper the response by updating the camera helper with the response, and 
+then calling ```getNextMode()``` to determine the next mode the camera helper needs. **Note** In a future release, we will remove the need for the application to need to interact in this process. Here is the update/next mode sequence as seen in the example DetectorActivityWithHelper:
 
 ```
 // once getting a JobResponse, determine if the 
