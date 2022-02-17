@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,6 +30,7 @@ import id.vouched.android.Instruction;
 import id.vouched.android.Step;
 import id.vouched.android.VouchedCameraHelper;
 import id.vouched.android.VouchedCameraHelperOptions;
+import id.vouched.android.VouchedLogger;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedSessionParameters;
 import id.vouched.android.VouchedUtils;
@@ -48,17 +50,9 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     private VouchedCameraHelper cameraHelper;
     private VouchedSession session;
 
-    private boolean onBarcodeStep = false;
-    private boolean includeBarcode = false;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Bundle bundle = getIntent().getExtras();
-        if (bundle != null) {
-            includeBarcode = (boolean) bundle.get("includeBarcode");
-        }
-
         setContentView(R.layout.activity_id_ex);
         previewView = findViewById(R.id.preview_view);
 
@@ -67,7 +61,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
                     .withCardDetectOptions(new CardDetectOptions.Builder()
                             .withEnableDistanceCheck(false)
-                            .withEnhanceInfoExtraction(false)
+                            .withEnhanceInfoExtraction(true)
                             .build())
                     .withCardDetectResultListener(this)
                     .withBarcodeDetectResultListener(this)
@@ -105,7 +99,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             session.postBackId(this, barcodeResult, null, this);
             setFeedbackText("Please wait. Processing image.");
         } else {
-            setFeedbackText("Focus camera on barcode");
+            setFeedbackText("Focus camera on back of ID");
         }
     }
 
@@ -125,8 +119,12 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
                 inputFirstName = bundle.get("firstName") + "";
                 inputLastName = bundle.get("lastName") + "";
             }
-
-            session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
+            VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
+            if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
+                session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
+            } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
+                session.postBackId(this, cardDetectResult, null, this);
+            }
         }
     }
 
@@ -139,7 +137,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         };
 
         if (response.getError() != null) {
-            System.out.println(response.getError().getMessage());
+            System.out.println("Error: " + response.getError().getMessage());
             setFeedbackText("An error occurred");
             Timer timer = new Timer();
             timer.schedule(new TimerTask() {
@@ -152,7 +150,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         }
 
         Job job = response.getJob();
-        System.out.println(job.toJson());
+        VouchedLogger.getInstance().info(job.toJson());
 
         List<Insight> insights = VouchedUtils.extractInsights(response.getJob());
         if (insights.size() != 0) {
@@ -166,26 +164,43 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
                 }
             }, 5000);
         } else {
-            if (includeBarcode && !onBarcodeStep) {
-                onBarcodeStep = true;
+            // determine if the job response requires other id processing
+            // NOTE: This only processes the response if .withEnhanceInfoExtraction is set to true,
+            // otherwise, it will always return a next state of COMPLETED
+            cameraHelper.updateDetectionModes(job.getResult());
+            // advance the mode to the next ID detection state.
+            VouchedCameraHelper.Mode next = cameraHelper.getNextMode();
+            if (!next.equals(VouchedCameraHelper.Mode.COMPLETED)) {
                 try {
-                    cameraHelper.switchMode(VouchedCameraHelper.Mode.BARCODE);
+                    cameraHelper.switchMode(next);
                 } catch (VouchedAssetsMissingException e) {
                     e.printStackTrace();
                 }
+                setFeedbackText("");
+                showToastForMode(next);
                 Timer timer = new Timer();
                 timer.schedule(new TimerTask() {
                     @Override
                     public void run() {
                         runOnUiThread(resumeCamera);
                     }
-                }, 5000);
+                }, 2000);
+
             } else {
                 onPause();
                 Intent i = new Intent(DetectorActivityWithHelper.this, FaceDetectorActivityWithHelper.class);
                 i.putExtra("Session", (Serializable) session);
                 startActivity(i);
             }
+        }
+    }
+
+    private void showToastForMode(VouchedCameraHelper.Mode next) {
+        // in a real app you would craft a per mode dialog and message, so the user of
+        // your app understands intent.
+        if (next.equals(VouchedCameraHelper.Mode.ID_BACK) ||
+        next.equals(VouchedCameraHelper.Mode.BARCODE)) {
+            Toast.makeText(this, "Turn ID card over to backside and lay on surface", Toast.LENGTH_LONG).show();
         }
     }
 
@@ -202,6 +217,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             case GLASSES:
                 return "please take off your glasses";
             case UNKNOWN:
+
             default:
                 return "Unknown Error";
         }
@@ -215,7 +231,6 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     }
 
     protected void updateText(Instruction instruction) {
-//        System.out.println(instruction);
         String s = "";
 
         switch (instruction) {

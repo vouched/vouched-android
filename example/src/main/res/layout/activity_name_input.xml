@@ -44,8 +44,10 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="50dp"
         android:checked="false"
+        android:enabled="false"
         android:text="Include Barcode"
-        android:textColor="@color/tfe_color_primary" />
+        android:textColor="@color/tfe_color_primary"
+        android:visibility="invisible" />
 
     <Button
         android:id="@+id/button3"

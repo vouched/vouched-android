@@ -20,19 +20,17 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 - An account with Vouched
 - Your Vouched Public Key
 - Mobile Assets (available on the dashboard)
-- [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android) for barcode detection and for the enhanced info extraction feature of ID detection
--  [ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection/android) for face detection
 
 ## Install
 
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:0.5.0'
+implementation 'id.vouched.android:vouched-sdk:0.5.5'
 ```
 
 #### (Optional) Add barcode scanning
-In order to use [BarcodeDetect](#barcodedetect), or the enhanced into extraction feature for ID detection, you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
+In order to use [BarcodeDetect](#barcodedetect), you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
 Note: you can choose between the bundled and unbundled model. Our experience is that the bundled model provides  more accurate barcode scans. See the above ML Kit link for more information
 
 ```shell
@@ -87,7 +85,7 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 
 ### VouchedCameraHelper
 
-This class is introduced to make it easier for developers to integrate VouchedSDK and provide the optimal photography. The helper takes care of configuring the capture session, input, and output. Helper has following modes: 'ID' | 'FACE' | 'BARCODE'
+This class is introduced to make it easier for developers to integrate VouchedSDK and provide the optimal photography. The helper takes care of configuring the capture session, input, and output. Helper has following detection modes: 'ID' | 'FACE' | 'BARCODE' | 'ID_BACK'. 
 
 ##### Initialize
 
@@ -112,6 +110,23 @@ VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCo
 | [VouchedCameraHelper.Mode](#vouchedcamerahelpermode)          |  false   |
 | [VouchedCameraHelper.Options](#vouchedcamerahelperoptions)          |  false   |
 
+**Enhanced ID Info Extraction**
+The camera helper can increase your verification abilities by recognizing additional sources of information based on the type of ID that your user submits.  You can enable this behavior by using  ```.withEnhanceInfoExtraction(true)``` when setting you create the camera helper.
+
+Once enabled, the helper can help guide the ID verification modes by processing job results returned by the Vouched api service, and generating the appropriate modes that are needed to complete ID verification. 
+
+In the current release, on your JobResonseListener callback, you pass the camera helper the response by calling the 
+
+```
+// once getting a JobResponse, determine if the 
+// job response requires other id processing
+cameraHelper.updateDetectionModes(job.getResult());
+// advance the mode to the next state.
+VouchedCameraHelper.Mode next = cameraHelper.getNextMode();
+// give the user feedback based on the next step
+```
+
+The DetectorActivityWithHelper class in the example app shows how this mechanism can be implemented.
 
 ### CameraX
 
@@ -177,15 +192,11 @@ session.confirm(this, null, this);
 ### CardDetect
 
 This class handles detecting an ID (cards and passports) and performing necessary steps to ensure image is POSTABLE.
-Note: Use of withEnhanceInfoExtraction requires the 
 
 ##### Initialize
 
 ```java
-CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder()
-                                       .withEnableDistanceCheck(true)
-                                       .withEnhanceInfoExtraction(true)
-                                       .build(), this);
+CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
 ```
 
 | Parameter Type                                                 | Nullable |
@@ -260,7 +271,8 @@ faceDetect.processImageProxy(imageProxy, graphicOverlay);
 
 ##### CardDetectResult
 
-The output from [Card Detection](#carddetect) and used to submit an ID.
+The output from [Card Detection](#carddetect) and used to submit an ID. 
+**Note** that CardDetectResults can arise from scanning the font or back of certain ID documents. It is currently the responsibility of the card detection callback to keep track of the mode the helper is in, and post to the correct endpoint. A future update will remove this requirement.
 
 ```java
 class CardDetectResult {
@@ -274,15 +286,28 @@ class CardDetectResult {
 }
 ```
 
+An example of handling front and back ID images in a card detection callback:
+
+```
+VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
+if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
+    session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
+} else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
+    session.postBackId(this, cardDetectResult, null, this);
+}
+```
+
 ##### VouchedCameraHelperMode
 
-An enum to provide mode for [VouchedCameraHelper](#vouchedcamerahelper)
+An enum to provide detection modes for [VouchedCameraHelper](#vouchedcamerahelper) 
 
 ```java
 enum Mode {
         ID,
         BARCODE,
-        FACE
+        ID_BACK,
+        FACE,
+        COMPLETED
     }
 ```
 
