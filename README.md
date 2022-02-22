@@ -122,7 +122,8 @@ In the current release, some coding is necessary  - in your JobResponseListener 
 onJobResonse changes:
 
 ```
-// determine if the ID requires other processing 
+// after verifying errors and insights, determine if the 
+// ID requires other processing 
 cameraHelper.updateDetectionModes(job.getResult());
 // advance the mode to the next state.
 VouchedCameraHelper.Mode next = cameraHelper.getNextMode();
