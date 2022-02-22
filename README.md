@@ -26,7 +26,7 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:0.5.5'
+implementation 'id.vouched.android:vouched-sdk:0.5.6'
 ```
 
 #### (Optional) Add barcode scanning
@@ -62,7 +62,7 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
 
 1. [Run the Example](#run-example)
-   - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each step.
+   - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each verification step.
    ```java
    System.out.println(job.toJson());
    ```
@@ -115,22 +115,36 @@ The camera helper can increase your verification abilities by recognizing additi
 
 Once enabled, the helper can help guide the ID verification modes by processing job results returned by the Vouched api service, and generating the appropriate modes that are needed to complete ID verification. 
 
-In the current release, on your JobResonseListener callback, you pass the camera helper the response by calling the 
+In terms of workflow, once the front ID has been imaged and uploaded, the Vouched service identifies the type if ID that is being used, and returns as part of response a  JobResult object  that informs the SDK as to other data extraction actions that may be taken. These additional actions can include extractions of data from one or more barcodes or capturing an image of the back of the ID for firther analysis.
+
+In the current release, some coding is necessary  - in your JobResponseListener callback, you first must verify that the job has no errors or insights (user feedback that requires more actions on the user's part before leaving a mode). If that proves to be true, pass the camera helper the results object and determine the next mode. Since you know what the next mode will be, this is a great point to dispay a dialog or provide other feedback to the user as to inform them as what to expect next.
+
+onJobResonse changes:
 
 ```
-// once getting a JobResponse, determine if the 
-// job response requires other id processing
+// determine if the ID requires other processing 
 cameraHelper.updateDetectionModes(job.getResult());
 // advance the mode to the next state.
 VouchedCameraHelper.Mode next = cameraHelper.getNextMode();
 // give the user feedback based on the next step
 ```
 
-The DetectorActivityWithHelper class in the example app shows how this mechanism can be implemented.
+onCardDetectResult changes for back/frontside detection:
+
+```
+VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
+if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
+    session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
+} else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
+    session.postBackId(this, cardDetectResult, null, this);
+}
+```
+
+**Note:** The DetectorActivityWithHelper class in the example app shows how enhanced extraction can be implemented. 
 
 ### CameraX
 
-We recommend using [CameraX](https://developer.android.com/training/camerax) with the Vouched SDK. The references will all use CameraX.
+We recommend using [CameraX](https://developer.android.com/training/camerax) with the Vouched SDK. The references will all use CameraX, and in the case of the VouchedCameraHelper, the CameraX apis are a dependency of that component.
 
 ### VouchedSession
 
@@ -196,7 +210,8 @@ This class handles detecting an ID (cards and passports) and performing necessar
 ##### Initialize
 
 ```java
-CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true).build(), this);
+CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true)
+                           .withEnhanceInfoExtraction(false)build(), this);
 ```
 
 | Parameter Type                                                 | Nullable |
