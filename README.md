@@ -67,6 +67,7 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
    System.out.println(job.toJson());
    ```
    - Once completed, take a look at the [Job details on your Dashboard](https://docs.vouched.id/#section/Dashboard/Jobs)
+   
 2. Modify the Listeners
 
    - Locate the [JobResponseListener](#jobresponselistener) in each Activity and make modifications.
@@ -79,6 +80,7 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 
 3. Tweak CameraX settings  
    Better images lead to better results from Vouched AI
+   
 4. You are ready to integrate Vouched SDK into your app
 
 ## Reference

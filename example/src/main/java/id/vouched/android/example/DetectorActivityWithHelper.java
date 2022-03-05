@@ -216,6 +216,8 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
                 return "image is missing required visual markers";
             case GLASSES:
                 return "please take off your glasses";
+            case ID_PHOTO:
+                return "ID needs a valid photo";
             case UNKNOWN:
 
             default:

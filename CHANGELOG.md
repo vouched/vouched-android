@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.0] - 2022-3-04
+
+#### Added
+- Added ID_PHOTO insight to provide feedback when no photo is detected on an ID
+
 ## [0.5.6] - 2022-2-16
 
 #### Added
