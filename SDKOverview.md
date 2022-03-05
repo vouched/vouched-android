@@ -49,16 +49,3 @@ public enum Insight {
     GLASSES
 }
 ```
-
-#### RetryableError
-
-The SDK provides an enumeration of JobErrors that typically are considered retryableable, ie repeating the Stage may result in a successful outcome:
-
-```
-public enum RetryableError {
-    InvalidIdPhotoError,
-    InvalidUserPhotoError,
-    BlurryIdPhotoError,
-    GlareIdPhotoError
-}
-```
