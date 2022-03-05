@@ -26,7 +26,7 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:0.5.6'
+implementation 'id.vouched.android:vouched-sdk:0.6.0'
 ```
 
 #### (Optional) Add barcode scanning
@@ -485,15 +485,3 @@ interface OnDetectResultListener {
 }
 ```
 
-##### RetryableError
-
-An enum to provide an optional baseline of Verification Error(s) for a given Job.
-
-```java
-enum RetryableError {
-    InvalidIdPhotoError,
-    InvalidUserPhotoError,
-    BlurryIdPhotoError,
-    GlareIdPhotoError
-}
-```
