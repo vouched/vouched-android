@@ -96,7 +96,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     public void onBarcodeResult(BarcodeResult barcodeResult) {
         if (barcodeResult != null) {
             onPause();
-            session.postBackId(this, barcodeResult, null, this);
+            session.postBackId(this, barcodeResult, new Params.Builder(), this);
             setFeedbackText("Please wait. Processing image.");
         } else {
             setFeedbackText("Focus camera on back of ID");
@@ -123,7 +123,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
                 session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
             } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-                session.postBackId(this, cardDetectResult, null, this);
+                session.postBackId(this, cardDetectResult, new Params.Builder(), this);
             }
         }
     }
