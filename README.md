@@ -139,7 +139,7 @@ VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
 if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
     session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
 } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-    session.postBackId(this, cardDetectResult, null, this);
+    session.postBackId(this, cardDetectResult, new Params.Builder(), this);
 }
 ```
 
