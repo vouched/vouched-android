@@ -112,7 +112,7 @@ VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCo
 | [VouchedCameraHelper.Mode](#vouchedcamerahelpermode)          |  false   |
 | [VouchedCameraHelper.Options](#vouchedcamerahelperoptions)          |  false   |
 
-**Enhanced ID Info Extraction**
+### Enhanced ID Info Extraction
 The camera helper can increase your verification abilities by recognizing additional sources of information based on the type of ID that your user submits.  You can enable this behavior by using  ```.withEnhanceInfoExtraction(true)``` when setting you create the camera helper.
 
 Once enabled, the helper can help guide the ID verification modes by processing job results returned by the Vouched api service, and generating the appropriate modes that are needed to complete ID verification. 
