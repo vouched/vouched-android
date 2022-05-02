@@ -26,7 +26,7 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:0.6.0'
+implementation 'id.vouched.android:vouched-sdk:0.6.9'
 ```
 
 #### (Optional) Add barcode scanning
