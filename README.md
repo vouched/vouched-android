@@ -19,14 +19,13 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 
 - An account with Vouched
 - Your Vouched Public Key
-- Mobile Assets (available on the dashboard)
 
 ## Install
 
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:0.6.9'
+implementation 'id.vouched.android:vouched-sdk:0.7.0'
 ```
 
 #### (Optional) Add barcode scanning

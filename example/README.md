@@ -32,10 +32,6 @@ API_KEY="<PUBLIC_KEY>"
 
 note: `"` is required for strings
 
-### Add Vouched Assets
-
-1. Navigate to your Vouched Dashboard and download the Android [Mobile Assets](https://docs.vouched.id/#section/Dashboard/Mobile-Assets).
-2. Unzip and copy the `assets` directory to src/main. The result will be `src/main/assets`
 
 ### Build
 
