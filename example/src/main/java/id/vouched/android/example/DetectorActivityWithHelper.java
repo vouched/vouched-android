@@ -6,6 +6,9 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.airbnb.lottie.LottieAnimationView;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -50,11 +55,36 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     private VouchedCameraHelper cameraHelper;
     private VouchedSession session;
 
+    private LottieAnimationView instructionsAnimationView;
+
+    private InstructionAnimations currentInstructionAnimation;
+
+    private enum InstructionAnimations {
+        HORIZONTAL_TO_VERTICAL,
+        VERTICAL_TO_HORIZONTAL
+    }
+
+    private boolean idConfirmationEnabled = false;
+
+    private Button idConfirmationRetryButton;
+
+    private Button idConfirmationConfirmButton;
+
+    private ImageView idConfirmationImageView;
+
+    private View idConfirmationView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        idConfirmationEnabled = getIntent().getExtras().getBoolean("idConfirmationEnabled");
         setContentView(R.layout.activity_id_ex);
         previewView = findViewById(R.id.preview_view);
+        instructionsAnimationView = findViewById(R.id.instructions_animation_view);
+        idConfirmationRetryButton = findViewById(R.id.retry_button);
+        idConfirmationConfirmButton = findViewById(R.id.confirm_button);
+        idConfirmationImageView = findViewById(R.id.confirmation_image_view);
+        idConfirmationView = findViewById(R.id.id_confirmation_view);
 
         session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build());
         try {
@@ -62,6 +92,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
                     .withCardDetectOptions(new CardDetectOptions.Builder()
                             .withEnableDistanceCheck(false)
                             .withEnhanceInfoExtraction(true)
+                            .withEnableOrientationCheck(true)
                             .build())
                     .withCardDetectResultListener(this)
                     .withBarcodeDetectResultListener(this)
@@ -107,25 +138,45 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     public void onCardDetectResult(CardDetectResult cardDetectResult) {
         updateText(cardDetectResult.getInstruction());
         if (Step.POSTABLE.equals(cardDetectResult.getStep())) {
-            setFeedbackText("Please wait. Processing image.");
             onPause();
-
-            String inputFirstName = null;
-            String inputLastName = null;
-            Intent i = getIntent();
-            Bundle bundle = i.getExtras();
-
-            if (bundle != null) {
-                inputFirstName = bundle.get("firstName") + "";
-                inputLastName = bundle.get("lastName") + "";
-            }
-            VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
-            if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
-                session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
-            } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-                session.postBackId(this, cardDetectResult, new Params.Builder(), this);
+            if (idConfirmationEnabled){
+                showIdPhotoConfirmation(cardDetectResult);
+            }else {
+                postId(cardDetectResult);
             }
         }
+    }
+
+    private void postId(CardDetectResult cardDetectResult){
+        setFeedbackText("Please wait. Processing image.");
+        String inputFirstName = null;
+        String inputLastName = null;
+        Intent i = getIntent();
+        Bundle bundle = i.getExtras();
+
+        if (bundle != null) {
+            inputFirstName = bundle.get("firstName") + "";
+            inputLastName = bundle.get("lastName") + "";
+        }
+        VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
+        if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
+            session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
+        } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
+            session.postBackId(this, cardDetectResult, new Params.Builder(), this);
+        }
+    }
+
+    private void showIdPhotoConfirmation(CardDetectResult cardDetectResult){
+        idConfirmationImageView.setImageBitmap(cardDetectResult.getImageBitmap());
+        idConfirmationView.setVisibility(View.VISIBLE);
+        idConfirmationConfirmButton.setOnClickListener(v -> {
+            postId(cardDetectResult);
+            idConfirmationView.setVisibility(View.GONE);
+        });
+        idConfirmationRetryButton.setOnClickListener(v -> {
+            onResume();
+            idConfirmationView.setVisibility(View.GONE);
+        });
     }
 
     @Override
@@ -234,7 +285,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
 
     protected void updateText(Instruction instruction) {
         String s = "";
-
+        InstructionAnimations instructionAnimation = null;
         switch (instruction) {
             case HOLD_STEADY:
                 s = "Hold Steady";
@@ -248,11 +299,23 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             case ONLY_ONE:
                 s = "Multiple IDs";
                 break;
+            case ROTATE_TO_HORIZONTAL:
+                s = "Rotate to horizontal";
+                instructionAnimation = InstructionAnimations.VERTICAL_TO_HORIZONTAL;
+                break;
+            case ROTATE_TO_VERTICAL:
+                s = "Rotate to vertical";
+                instructionAnimation = InstructionAnimations.HORIZONTAL_TO_VERTICAL;
+                break;
             case NO_CARD:
             default:
                 s = "Show ID";
         }
-
+        if(instructionAnimation != null){
+            showInstructionAnimation(instructionAnimation);
+        }else{
+            clearInstructionAnimation();
+        }
         setFeedbackText(s);
     }
 
@@ -313,5 +376,28 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             onResume();
         }
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    private void showInstructionAnimation(InstructionAnimations instruction){
+        if(currentInstructionAnimation == instruction){return;}
+        if(currentInstructionAnimation != null){
+            instructionsAnimationView.cancelAnimation();
+        }
+        instructionsAnimationView.setVisibility(View.VISIBLE);
+        int resAnimation = 0;
+        if (instruction == InstructionAnimations.HORIZONTAL_TO_VERTICAL) {
+            resAnimation = R.raw.horizontal_to_vertical;
+        } else if (instruction == InstructionAnimations.VERTICAL_TO_HORIZONTAL) {
+            resAnimation = R.raw.vertical_to_horizontal;
+        }
+        instructionsAnimationView.setAnimation(resAnimation);
+        instructionsAnimationView.playAnimation();
+        currentInstructionAnimation = instruction;
+    }
+
+    private void clearInstructionAnimation(){
+        currentInstructionAnimation = null;
+        instructionsAnimationView.cancelAnimation();
+        instructionsAnimationView.setVisibility(View.GONE);
     }
 }

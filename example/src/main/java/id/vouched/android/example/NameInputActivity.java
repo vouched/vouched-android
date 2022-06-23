@@ -19,6 +19,7 @@ public class NameInputActivity extends AppCompatActivity {
         TextInputEditText firstNameInput = (TextInputEditText) findViewById(R.id.textInputFirstName);
         TextInputEditText lastNameInput = (TextInputEditText) findViewById(R.id.textInputLastName);
         SwitchMaterial barcodeSwitch = (SwitchMaterial) findViewById(R.id.barcodeSwitch);
+        SwitchMaterial idConfirmationSwitch = findViewById(R.id.id_confirmation);
 
         Button button = (Button) findViewById(R.id.button3);
         button.setOnClickListener(new View.OnClickListener() {
@@ -29,6 +30,7 @@ public class NameInputActivity extends AppCompatActivity {
                 i.putExtra("firstName", firstNameInput.getText());
                 i.putExtra("lastName", lastNameInput.getText());
                 i.putExtra("includeBarcode", barcodeSwitch.isChecked());
+                i.putExtra("idConfirmationEnabled", idConfirmationSwitch.isChecked());
                 startActivity(i);
             }
         });

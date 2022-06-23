@@ -12,13 +12,6 @@
         app:layout_constraintBottom_toTopOf="@+id/control"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <ImageView
-        android:id="@+id/image_view"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/control"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <id.vouched.android.example.IdGuideOverlay
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -39,5 +32,60 @@
             android:layout_height="wrap_content" />
 
     </LinearLayout>
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:visibility="gone"
+        android:id="@+id/instructions_animation_view"
+        app:lottie_loop="true"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:visibility="gone"
+        android:id="@+id/id_confirmation_view"
+        android:padding="16dp"
+        android:background="#ffffff"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <androidx.appcompat.widget.AppCompatTextView
+            android:layout_gravity="center_horizontal"
+            android:text="Please confirm the text is clear and the photo is free of glare"
+            android:layout_width="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:layout_height="wrap_content"/>
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/confirmation_image_view"
+            android:layout_marginBottom="8dp"
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"/>
+        <androidx.appcompat.widget.LinearLayoutCompat
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <Button
+                android:id="@+id/confirm_button"
+                android:textColor="#fff"
+                android:background="@color/tfe_color_primary"
+                android:layout_weight="1"
+                android:text="Confirm"
+                android:layout_marginEnd="4dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+            <Button
+                android:id="@+id/retry_button"
+                android:background="@color/tfe_semi_transparent"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="Retry"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"/>
+        </androidx.appcompat.widget.LinearLayoutCompat>
+    </androidx.appcompat.widget.LinearLayoutCompat>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
