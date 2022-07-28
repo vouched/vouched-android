@@ -1,24 +1,20 @@
 package id.vouched.android.example;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
-import com.airbnb.lottie.LottieAnimationView;
+import androidx.databinding.DataBindingUtil;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -39,6 +35,12 @@ import id.vouched.android.VouchedLogger;
 import id.vouched.android.VouchedSession;
 import id.vouched.android.VouchedSessionParameters;
 import id.vouched.android.VouchedUtils;
+import id.vouched.android.example.databinding.ActivityIdExBinding;
+import id.vouched.android.example.databinding.IncludeIdConfirmationBinding;
+import id.vouched.android.example.databinding.IncludeIdManualCaptureBinding;
+import id.vouched.android.example.databinding.IncludeIdScanningInstructionsBinding;
+import id.vouched.android.example.databinding.IncludeIdTimeoutBinding;
+import id.vouched.android.example.databinding.IncludeLoadingBinding;
 import id.vouched.android.exception.VouchedAssetsMissingException;
 import id.vouched.android.exception.VouchedCameraHelperException;
 import id.vouched.android.model.Insight;
@@ -50,12 +52,20 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
 
     private static final int PERMISSION_REQUESTS = 1;
 
-    private PreviewView previewView;
+    private ActivityIdExBinding binding;
+
+    private IncludeIdScanningInstructionsBinding instructionsView;
+
+    private IncludeIdConfirmationBinding confirmationView;
+
+    private IncludeIdTimeoutBinding timeoutView;
+
+    private IncludeIdManualCaptureBinding manualCaptureView;
+
+    private IncludeLoadingBinding loadingView;
 
     private VouchedCameraHelper cameraHelper;
     private VouchedSession session;
-
-    private LottieAnimationView instructionsAnimationView;
 
     private InstructionAnimations currentInstructionAnimation;
 
@@ -66,29 +76,20 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
 
     private boolean idConfirmationEnabled = false;
 
-    private Button idConfirmationRetryButton;
-
-    private Button idConfirmationConfirmButton;
-
-    private ImageView idConfirmationImageView;
-
-    private View idConfirmationView;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         idConfirmationEnabled = getIntent().getExtras().getBoolean("idConfirmationEnabled");
-        setContentView(R.layout.activity_id_ex);
-        previewView = findViewById(R.id.preview_view);
-        instructionsAnimationView = findViewById(R.id.instructions_animation_view);
-        idConfirmationRetryButton = findViewById(R.id.retry_button);
-        idConfirmationConfirmButton = findViewById(R.id.confirm_button);
-        idConfirmationImageView = findViewById(R.id.confirmation_image_view);
-        idConfirmationView = findViewById(R.id.id_confirmation_view);
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_id_ex);
+        instructionsView = binding.instructionsView;
+        confirmationView = binding.idConfirmationView;
+        timeoutView = binding.timeoutView;
+        manualCaptureView = binding.manualCaptureView;
+        loadingView = binding.loadingView;
 
         session = new VouchedSession(BuildConfig.API_KEY, new VouchedSessionParameters.Builder().build());
         try {
-            cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
+            cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), binding.previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
                     .withCardDetectOptions(new CardDetectOptions.Builder()
                             .withEnableDistanceCheck(false)
                             .withEnhanceInfoExtraction(true)
@@ -97,6 +98,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
                     .withCardDetectResultListener(this)
                     .withBarcodeDetectResultListener(this)
                     .withCameraFlashDisabled(true)
+                    .withTimeOut(20000L, this::showTimeoutView)
                     .build());
         } catch (VouchedAssetsMissingException e) {
             e.printStackTrace();
@@ -128,19 +130,19 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         if (barcodeResult != null) {
             onPause();
             session.postBackId(this, barcodeResult, new Params.Builder(), this);
-            setFeedbackText("Please wait. Processing image.");
+            showLoading("Please wait. Processing image.");
         } else {
-            setFeedbackText("Focus camera on back of ID");
+            setInstructionText("Focus camera on back of ID");
         }
     }
 
     @Override
     public void onCardDetectResult(CardDetectResult cardDetectResult) {
-        updateText(cardDetectResult.getInstruction());
+        handleInstructionsOnUI(cardDetectResult.getInstruction());
         if (Step.POSTABLE.equals(cardDetectResult.getStep())) {
             onPause();
             if (idConfirmationEnabled){
-                showIdPhotoConfirmation(cardDetectResult);
+                showIdPhotoConfirmation(cardDetectResult.getImageBitmap(), v -> postId(cardDetectResult));
             }else {
                 postId(cardDetectResult);
             }
@@ -148,7 +150,26 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     }
 
     private void postId(CardDetectResult cardDetectResult){
-        setFeedbackText("Please wait. Processing image.");
+        showLoading("Please wait. Processing image.");
+        VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
+        if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
+            session.postFrontId(this, cardDetectResult, getParamsBuilderWithInputData(), this);
+        } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
+            session.postBackId(this, cardDetectResult, new Params.Builder(), this);
+        }
+    }
+
+    private void postId(Bitmap manualCaptureImage){
+        showLoading("Please wait. Processing image.");
+        VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
+        if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
+            session.postFrontId(this, manualCaptureImage, getParamsBuilderWithInputData(), this);
+        } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
+            session.postBackId(this, manualCaptureImage, new Params.Builder(), this);
+        }
+    }
+
+    private Params.Builder getParamsBuilderWithInputData(){
         String inputFirstName = null;
         String inputLastName = null;
         Intent i = getIntent();
@@ -158,29 +179,60 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
             inputFirstName = bundle.get("firstName") + "";
             inputLastName = bundle.get("lastName") + "";
         }
-        VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
-        if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
-            session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
-        } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-            session.postBackId(this, cardDetectResult, new Params.Builder(), this);
-        }
+        return new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName);
     }
 
-    private void showIdPhotoConfirmation(CardDetectResult cardDetectResult){
-        idConfirmationImageView.setImageBitmap(cardDetectResult.getImageBitmap());
-        idConfirmationView.setVisibility(View.VISIBLE);
-        idConfirmationConfirmButton.setOnClickListener(v -> {
-            postId(cardDetectResult);
-            idConfirmationView.setVisibility(View.GONE);
+    private void showIdPhotoConfirmation(Bitmap image, View.OnClickListener confirmClick){
+        confirmationView.imageView.setImageBitmap(image);
+        confirmationView.getRoot().setVisibility(View.VISIBLE);
+        confirmationView.confirmButton.setOnClickListener(v -> {
+            confirmClick.onClick(v);
+            confirmationView.getRoot().setVisibility(View.GONE);
         });
-        idConfirmationRetryButton.setOnClickListener(v -> {
+        confirmationView.retryButton.setOnClickListener(v -> {
             onResume();
-            idConfirmationView.setVisibility(View.GONE);
+            confirmationView.getRoot().setVisibility(View.GONE);
         });
+    }
+
+    private void showTimeoutView(){
+        timeoutView.getRoot().setVisibility(View.VISIBLE);
+        timeoutView.manuallyOptionButton.setOnClickListener(v -> {
+            timeoutView.getRoot().setVisibility(View.GONE);
+            showManualCaptureView();
+        });
+        timeoutView.retryButton.setOnClickListener(v -> {
+            timeoutView.getRoot().setVisibility(View.GONE);
+            cameraHelper.clearAndRestartTimeout();
+        });
+    }
+
+    private void showManualCaptureView(){
+        instructionsView.getRoot().setVisibility(View.GONE);
+        manualCaptureView.getRoot().setVisibility(View.VISIBLE);
+        manualCaptureView.captureButton.setOnClickListener(v -> {
+            v.setEnabled(false);
+            cameraHelper.capturePhoto(image -> {
+                v.setEnabled(true);
+                showIdPhotoConfirmation(image, (b) -> {
+                    postId(image);
+                });
+            });
+        });
+    }
+
+    private void showLoading(String message){
+        loadingView.messageTextView.setText(message);
+        loadingView.getRoot().setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoading(){
+        loadingView.getRoot().setVisibility(View.GONE);
     }
 
     @Override
     public void onJobResponse(JobResponse response) {
+        hideLoading();
         Runnable resumeCamera = new Runnable() {
             public void run() {
                 onResume();
@@ -189,7 +241,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
 
         if (response.getError() != null) {
             System.out.println("Error: " + response.getError().getMessage());
-            setFeedbackText("An error occurred");
+            showAlert("An error occurred");
             Timer timer = new Timer();
             timer.schedule(new TimerTask() {
                 @Override
@@ -205,7 +257,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
 
         List<Insight> insights = VouchedUtils.extractInsights(response.getJob());
         if (insights.size() != 0) {
-            setFeedbackText(messageByInsight(insights.get(0)));
+            showAlert(messageByInsight(insights.get(0)));
 
             Timer timer = new Timer();
             timer.schedule(new TimerTask() {
@@ -227,7 +279,7 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
                 } catch (VouchedAssetsMissingException e) {
                     e.printStackTrace();
                 }
-                setFeedbackText("");
+                setInstructionText("");
                 showToastForMode(next);
                 Timer timer = new Timer();
                 timer.schedule(new TimerTask() {
@@ -276,14 +328,11 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         }
     }
 
-    protected void setFeedbackText(@NonNull final String s) {
-        TextView textView = (TextView) findViewById(R.id.textViewIdInstruction);
-        textView.setTextSize(20);
-        textView.setTextColor(Color.WHITE);
-        textView.setText(s);
+    protected void setInstructionText(@NonNull final String s) {
+        instructionsView.instructionTextView.setText(s);
     }
 
-    protected void updateText(Instruction instruction) {
+    protected void handleInstructionsOnUI(Instruction instruction) {
         String s = "";
         InstructionAnimations instructionAnimation = null;
         switch (instruction) {
@@ -316,24 +365,15 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
         }else{
             clearInstructionAnimation();
         }
-        setFeedbackText(s);
+        setInstructionText(s);
     }
 
     // -- Permission helpers
     private String[] getRequiredPermissions() {
-        try {
-            PackageInfo info =
-                    this.getPackageManager()
-                            .getPackageInfo(this.getPackageName(), PackageManager.GET_PERMISSIONS);
-            String[] ps = info.requestedPermissions;
-            if (ps != null && ps.length > 0) {
-                return ps;
-            } else {
-                return new String[0];
-            }
-        } catch (Exception e) {
-            return new String[0];
-        }
+        return new String[]{
+                Manifest.permission.INTERNET,
+                Manifest.permission.CAMERA
+        };
     }
 
     private static boolean isPermissionGranted(Context context, String permission) {
@@ -381,23 +421,31 @@ public class DetectorActivityWithHelper extends AppCompatActivity implements Car
     private void showInstructionAnimation(InstructionAnimations instruction){
         if(currentInstructionAnimation == instruction){return;}
         if(currentInstructionAnimation != null){
-            instructionsAnimationView.cancelAnimation();
+            instructionsView.animationView.cancelAnimation();
         }
-        instructionsAnimationView.setVisibility(View.VISIBLE);
+        instructionsView.animationView.setVisibility(View.VISIBLE);
         int resAnimation = 0;
         if (instruction == InstructionAnimations.HORIZONTAL_TO_VERTICAL) {
             resAnimation = R.raw.horizontal_to_vertical;
         } else if (instruction == InstructionAnimations.VERTICAL_TO_HORIZONTAL) {
             resAnimation = R.raw.vertical_to_horizontal;
         }
-        instructionsAnimationView.setAnimation(resAnimation);
-        instructionsAnimationView.playAnimation();
+        instructionsView.animationView.setAnimation(resAnimation);
+        instructionsView.animationView.playAnimation();
         currentInstructionAnimation = instruction;
     }
 
     private void clearInstructionAnimation(){
         currentInstructionAnimation = null;
-        instructionsAnimationView.cancelAnimation();
-        instructionsAnimationView.setVisibility(View.GONE);
+        instructionsView.animationView.cancelAnimation();
+        instructionsView.animationView.setVisibility(View.GONE);
+    }
+
+    private void showAlert(String message){
+        new AlertDialog.Builder(this)
+                .setMessage(message)
+                .setPositiveButton("Accept", (dialog, r)-> {
+                    dialog.dismiss();
+                }).create().show();
     }
 }

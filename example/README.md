@@ -32,7 +32,6 @@ API_KEY="<PUBLIC_KEY>"
 
 note: `"` is required for strings
 
-
 ### Build
 
 Use Android Studio Gradle Plugin to build broject

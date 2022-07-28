@@ -25,7 +25,7 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:0.7.0'
+implementation 'id.vouched.android:vouched-sdk:0.5.6'
 ```
 
 #### (Optional) Add barcode scanning
@@ -60,6 +60,8 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 
 0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
 
+0. [An overview of SDK components](https://github.com/vouched/vouched-android/blob/master/SDKOverview.md)
+
 1. [Run the Example](#run-example)
    - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each verification step.
    ```java
@@ -71,18 +73,15 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 
    - Locate the [JobResponseListener](#jobresponselistener) in each Activity and make modifications.
 
-     - Comment out the [RetryableErrors](#retryableerror)
-       `List<RetryableError> retryableErrors = ...`
      - Add custom logic to display data or control the navigation
-
    - Locate the [CardDetectResultListener](#carddetectresultlistener) and [FaceDetectResultListener](#facedetectresultlistener) and add logging
-
+   
 3. Tweak CameraX settings  
    Better images lead to better results from Vouched AI
    
 4. You are ready to integrate Vouched SDK into your app
 
-## Reference
+## SDK Reference
 
 ### VouchedCameraHelper
 
@@ -94,11 +93,13 @@ This class is introduced to make it easier for developers to integrate VouchedSD
 VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
                 .withCardDetectOptions(new CardDetectOptions.Builder()
                         .withEnableDistanceCheck(false)
-                        .withEnhanceInfoExtraction(false)            
+                        .withEnhanceInfoExtraction(false)  
+                        .withEnableOrientationCheck(false)
                         .build())
                 .withCardDetectResultListener(this)
                 .withBarcodeDetectResultListener(this)
                 .withCameraFlashDisabled(true)
+                .withTimeOut(3000, timeoutListener)
                 .build());
 ```
 
@@ -111,14 +112,16 @@ VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCo
 | [VouchedCameraHelper.Mode](#vouchedcamerahelpermode)          |  false   |
 | [VouchedCameraHelper.Options](#vouchedcamerahelperoptions)          |  false   |
 
-### Enhanced ID Info Extraction
-The camera helper can increase your verification abilities by recognizing additional sources of information based on the type of ID that your user submits.  You can enable this behavior by using  ```.withEnhanceInfoExtraction(true)``` when setting you create the camera helper.
+
+**Enhanced ID Info Extraction**
+The camera helper can increase your verification abilities by recognizing additional sources of information based on the type of ID that your user submits.  You can enable this behavior by using  ```.withEnhanceInfoExtraction(true)``` when you create the camera helper.
 
 Once enabled, the helper can help guide the ID verification modes by processing job results returned by the Vouched api service, and generating the appropriate modes that are needed to complete ID verification. 
 
 In terms of workflow, once the front ID has been imaged and uploaded, the Vouched service identifies the type if ID that is being used, and returns as part of response a  JobResult object  that informs the SDK as to other data extraction actions that may be taken. These additional actions can include extractions of data from one or more barcodes or capturing an image of the back of the ID for firther analysis.
 
 In the current release, some coding is necessary  - in your JobResponseListener callback, you first must verify that the job has no errors or insights (user feedback that requires more actions on the user's part before leaving a mode). If that proves to be true, pass the camera helper the results object and determine the next mode. Since you know what the next mode will be, this is a great point to dispay a dialog or provide other feedback to the user as to inform them as what to expect next.
+
 
 onJobResonse changes:
 
@@ -138,11 +141,28 @@ VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
 if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
     session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
 } else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-    session.postBackId(this, cardDetectResult, new Params.Builder(), this);
+    session.postBackId(this, cardDetectResult, null, this);
 }
 ```
 
 **Note:** The DetectorActivityWithHelper class in the example app shows how enhanced extraction can be implemented. 
+
+**Enabling distance check**
+
+The camera helper can find for an ideal distance to capture the photo of the document by using ```.withEnableDistanceCheck(true)``` when setting you create the camera helper.
+
+When this is enabled, the helper will guide us through instructions (passed through an [OnDetectResultListener](#carddetectresultlistener) set by ```VouchedCameraHelperOptions.Builder.withCardDetectResultListener(OnDetectResultListener cardDetectResultListener)``` ) so that the user can move near or far his document from the camera.
+
+
+**Enabling orientation check**
+
+The camera helper can assist in guiding the user to an ideal ID document orientation by using ```.withEnableOrientationCheck(true)``` when setting you create the camera helper.
+
+When this is enabled, the helper will guide the user through instructions (passed through an [OnDetectResultListener](#carddetectresultlistener) set by ```VouchedCameraHelperOptions.Builder.withCardDetectResultListener(OnDetectResultListener cardDetectResultListener)``` ), so that the user can rotate their ID document to match the desired orientation.
+
+**Adding a timeout to ID scan**
+
+It is possible to set a timeout for how long to wait until an ID is captured, by using ```VouchedCameraHelperOptions.Builder.withTimeOut(Long timeInMilliseconds, TimeoutListener listener)```  (see [TimeoutListener](#TimeoutListener)).  When the timer expires the helper will stop looking for the ID, at which point it is possible to give the user the option to retry using ```vouchedCameraHelperInstance.clearAndRestartTimeout()```  or to manually capture the photo of his document using ```vouchedCameraHelperInstance.capturePhoto(imageCaptureListener)``` (see [ImageCaptureListener](#ImageCaptureListener)).
 
 ### CameraX
 
@@ -409,11 +429,11 @@ Follow the below template
 public void onJobResponse(JobResponse response) {
     if (response.getError() != null) {
         // handle app/network/system errors
+    } else { // see if there are recoverable job errors
+      Job job = response.getJob();
+      List<Insight> insights = VouchedUtils.extractInsights(response.getJob());
+      // inform the user of the error extracted
     }
-
-    // debug Job data
-    System.out.println(response.getJob().toJson());
-
     // implement business and navigation logic based on Job data
 }
 ```
@@ -426,6 +446,7 @@ The options for [Card Detection](#carddetect).
 class Builder {
     public Builder withEnableDistanceCheck(boolean enableDistanceCheck) { ... }
     public Builder withEnhanceInfoExtraction(boolean enableEnhancedIdScan) { ... }
+    public Builder withEnableOrientationCheck(boolean enableOrientationCheck) { ... }
 
     public CardDetectOptions build() { ... }
 }
@@ -448,6 +469,26 @@ The listener to retrieve [BarcodeDetectResult](#barcodedetectresult).
 ```java
 interface OnBarcodeResultListener {
     void onBarcodeResult(BarcodeResult barcodeResult);
+}
+```
+
+##### TimeoutListener
+
+Listener to know when the timeout has expired when a document is being scanned, when this is executed the helper stops searching for documents or barcodes.
+
+```java
+interface TimeoutListener {
+    void onTimeout();
+}
+```
+
+##### ImageCaptureListener
+
+listener to know when a photo has been captured manually
+
+```java
+interface ImageCaptureListener {
+   void onImageCapture(Bitmap bitmap);
 }
 ```
 
@@ -484,3 +525,15 @@ interface OnDetectResultListener {
 }
 ```
 
+##### RetryableError
+
+An enum to provide an optional baseline of Verification Error(s) for a given Job.
+
+```java
+enum RetryableError {
+    InvalidIdPhotoError,
+    InvalidUserPhotoError,
+    BlurryIdPhotoError,
+    GlareIdPhotoError
+}
+```
