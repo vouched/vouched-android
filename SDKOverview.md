@@ -1,8 +1,11 @@
+
+
+
 ### Overview of the Vouched SDK for Android
 
-The Vouched SDK for Android assists in the process of verifying a user identity (referred to as IDV). Verification typically takes different pieces of information (for example, a photo ID and a selfie) as input, and then determines, through analysis of that information, if the user can be verified. (Note that the information extracted from the ID photo may include ID text, barcoded information and id photo images, depending on the ID used).
+The Vouched SDK for Android assists in the process of verifying a user identity (referred to as IDV). Verification typically takes different pieces of information (for example, a photo ID and a selfie) as input, and then determines, through analysis of that information, if the user's identity can be verified from that information. 
 
-Verification flow is taken in steps, (front id -> rear id -> face detection -> confirmation) which are identified by the use of ```Stage``` enumeration in the SDK, which is passed as part of the data posted:
+Verification information flow is performed in *stages*, (front id -> rear id -> face detection -> confirmation) which are identified by the use of ```Stage``` enumeration in the SDK, which is passed as part of the data posted to the Vouched API service:
 ```
 public enum Stage {
     id,
@@ -14,14 +17,15 @@ public enum Stage {
 
 ### VouchedSession
 
-A session is responsible for the posting of information in each Stage to the Vouched API, and requires your account's public key to authenticate and identify itself to the API service. The session posts the information from each step of the verification flow until there is enough information to verify (confirm) the user's identity. 
+A session is responsible for the posting of information in each Stage to the Vouched API, and requires your account's public key to authenticate and identify itself to the API service. The session posts the information from each step of the verification flow until there is enough information to verify (confirm) the user's identity. Typical information posted includes images, additional job input parameters (user info such as first/last name, etc.), and in some cases data extracted from barcodes..
+
 **Note:** There should only be one session object used during the entire verification flow.
 
 ###  Job
 
 When submitting verification information via a session, the Vouched service will analyze that information, and will send back a Job response, which contains the job id, results, errors and signals that have been generated during that Stage of the verification flow. 
 
-More information on the Job response can be found in our [jobs documentation](https://docs.vouched.id/reference/findjobs)
+More information on the Job request and response parameters can be found in our [jobs documentation](https://docs.vouched.id/reference/findjobs)
 
 #### JobResult
 
@@ -37,7 +41,7 @@ Since the Vouched system is using machine learning and other artifical intellige
 
 #### Insight
 
-Insights categorize image analysis output signals for easier identification, which in many cases can provide a means of user guidance or insight with respect to image based issues:
+Insights categorize image analysis output signals for easier identification, which in many cases can provide a means of user guidance or insight with respect to image based issues. Insights are typically extracted from a Job though the use of ```VouchedUtils.extractInsights(Job job)```
 
 ```
 public enum Insight {
@@ -46,6 +50,17 @@ public enum Insight {
     QUALITY,
     BRIGHTNESS,
     FACE,
-    GLASSES
+    GLASSES,
+    ID_PHOTO
 }
 ```
+
+
+
+
+
+
+
+
+
+

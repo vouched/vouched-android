@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<layout>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -9,83 +10,41 @@
         android:id="@+id/preview_view"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/control"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <id.vouched.android.example.IdGuideOverlay
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/control"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <LinearLayout
-        android:id="@id/control"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="#000"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent">
-
-        <TextView
-            android:id="@+id/textViewIdInstruction"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-    </LinearLayout>
-
-    <com.airbnb.lottie.LottieAnimationView
-        android:visibility="gone"
-        android:id="@+id/instructions_animation_view"
-        app:lottie_loop="true"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginBottom="60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <androidx.appcompat.widget.LinearLayoutCompat
+    <include
+        android:id="@+id/instructions_view"
+        layout="@layout/include_id_scanning_instructions" />
+
+    <include
         android:visibility="gone"
+        android:id="@+id/manual_capture_view"
+        layout="@layout/include_id_manual_capture" />
+
+    <include
         android:id="@+id/id_confirmation_view"
-        android:padding="16dp"
-        android:background="#ffffff"
-        android:orientation="vertical"
+        layout="@layout/include_id_confirmation"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/timeout_view"
+        layout="@layout/include_id_timeout"
+        android:visibility="gone" />
+    <include
+        android:id="@+id/loading_view"
+        android:visibility="gone"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <androidx.appcompat.widget.AppCompatTextView
-            android:layout_gravity="center_horizontal"
-            android:text="Please confirm the text is clear and the photo is free of glare"
-            android:layout_width="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_height="wrap_content"/>
-        <androidx.appcompat.widget.AppCompatImageView
-            android:id="@+id/confirmation_image_view"
-            android:layout_marginBottom="8dp"
-            android:layout_weight="1"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"/>
-        <androidx.appcompat.widget.LinearLayoutCompat
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-            <Button
-                android:id="@+id/confirm_button"
-                android:textColor="#fff"
-                android:background="@color/tfe_color_primary"
-                android:layout_weight="1"
-                android:text="Confirm"
-                android:layout_marginEnd="4dp"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"/>
-            <Button
-                android:id="@+id/retry_button"
-                android:background="@color/tfe_semi_transparent"
-                android:layout_marginStart="4dp"
-                android:layout_weight="1"
-                android:text="Retry"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"/>
-        </androidx.appcompat.widget.LinearLayoutCompat>
-    </androidx.appcompat.widget.LinearLayoutCompat>
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        layout="@layout/include_loading" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

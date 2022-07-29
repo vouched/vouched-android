@@ -1,10 +1,10 @@
 package id.vouched.android.example;
 
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Build.VERSION_CODES;
@@ -274,19 +274,10 @@ public final class FaceDetectorActivity extends AppCompatActivity implements Fac
     }
 
     private String[] getRequiredPermissions() {
-        try {
-            PackageInfo info =
-                    this.getPackageManager()
-                            .getPackageInfo(this.getPackageName(), PackageManager.GET_PERMISSIONS);
-            String[] ps = info.requestedPermissions;
-            if (ps != null && ps.length > 0) {
-                return ps;
-            } else {
-                return new String[0];
-            }
-        } catch (Exception e) {
-            return new String[0];
-        }
+        return new String[]{
+                Manifest.permission.INTERNET,
+                Manifest.permission.CAMERA
+        };
     }
 
     private boolean allPermissionsGranted() {

@@ -1,9 +1,5 @@
 # Changelog
 
-## [0.6.6] - 2022-4-4
-- Added Nullable annotations to card|barcode|face detection methods and payloads
-- Fix for bitmap scale issues
-
 ## [0.6.0] - 2022-3-04
 
 #### Added
