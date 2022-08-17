@@ -1,7 +1,7 @@
 # Vouched
 
 [![GitHub release](https://img.shields.io/github/release/vouched/vouched-android.svg?maxAge=60)](https://github.com/vouched/vouched-android/releases)
-[![License](https://img.shields.io/github/license/vouched/vouched-android)](https://github.com/vouched/vouched-android/blob/master/LICENSE)
+[![License](https://img.shields.io/github/license/vouched/vouched-android)](LICENSE)
 
 ## Run Example
 
@@ -10,10 +10,10 @@ Clone this repo and change directory to _example_
 ```shell
 git clone https://github.com/vouched/vouched-android
 
-cd vouched-android/example
+cd vouched-android/examplekt
 ```
 
-Then, follow steps listed on the [example README](https://github.com/vouched/vouched-android/blob/master/example/README.md)
+Then, follow steps listed on the [example README](examplekt/README.md)
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ Then, follow steps listed on the [example README](https://github.com/vouched/vou
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:1.2.0'
+implementation 'id.vouched.android:vouched-sdk:1.3.0'
 ```
 
 #### (Optional) Add barcode scanning
@@ -60,7 +60,7 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 
 0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
 
-0. [An overview of SDK components](https://github.com/vouched/vouched-android/blob/master/SDKOverview.md)
+0. [An overview of SDK components](SDKOverview.md)
 
 1. [Run the Example](#run-example)
    - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each verification step.

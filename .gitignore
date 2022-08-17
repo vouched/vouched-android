@@ -1,19 +1,24 @@
 *.iml
 .gradle
 /local.properties
-/.idea/
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
 .DS_Store
 /build
 /captures
 .externalNativeBuild
 .cxx
+.idea
 
+# example files
+/examplekt/google-services.json
+/examplekt/src/main/assets/
+/examplekt/src/main/jniLibs/
+/examplekt/gradle.properties
 
-# assets and library files
-example/libs/
-example/src/main/assets/
-example/src/main/jniLibs/
-
-# private build files
-example/gradle.properties
+deploy.properties
 
