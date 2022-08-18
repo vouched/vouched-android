@@ -1,0 +1,62 @@
+<resources>
+    <string name="app_name">Vouched</string>
+    <string name="TAG_LOADING_UI" translatable="false">TAG_LOADING_UI</string>
+    <string name="accept">Accept</string>
+
+    <!-- @layout/fragment_welcome_form -->
+    <string name="fragment_welcome_form_title">Welcome</string>
+    <string name="fragment_welcome_form_start_button_text">Start verification</string>
+    <string name="fragment_welcome_form_welcome_message">Welcome to the Vouched identity verification sample</string>
+    <string name="fragment_welcome_first_name_label">First name (optional)</string>
+    <string name="fragment_welcome_last_name_label">Last name (optional)</string>
+    <string name="fragment_welcome_form_allow_camera_flash_label">Allow camera flash</string>
+    <string name="fragment_welcome_form_allow_id_confirmation_label">Ask for ID confirmation</string>
+    <string name="fragment_welcome_form_allow_orientation_check_label">Allow document orientation instruction</string>
+    <string name="fragment_welcome_form_allow_timeout_check_label">Allow timeout</string>
+    <string name="fragment_welcome_form_allow_timeout_label">Milliseconds</string>
+    <string name="fragment_welcome_form_allow_timeout_error_message">Must be at least %1$d milliseconds</string>
+
+    <!-- @layout/fragment_document_scanning -->
+    <string name="fragment_document_scanning_title">Document Scanning</string>
+
+    <!-- @layout/include_missing_permissions_error_view -->
+    <string name="include_missing_permissions_error_view_error_message">It is necessary to have permissions to access your camera and an internet connection to continue</string>
+    <string name="include_missing_permissions_error_view_settings_button_text">Go to Settings</string>
+
+    <!-- @layout/fragment_face_scanning -->
+    <string name="fragment_face_scanning_title">Face Scanning</string>
+
+    <!-- @layout/fragment_results -->
+    <string name="fragment_results_title">Results</string>
+    <string name="fragment_results_job_id">Job ID:</string>
+    <string name="fragment_results_job_id_instructions">with the Job ID you can try the reverification flow</string>
+    <string name="fragment_results_reverification_flow_button">Try reverification now</string>
+    <string name="fragment_results_job_id_clipboard_button">Copy Job ID and try reverification later</string>
+    <string name="fragment_results_job_id_copied_successfully_message">The Job ID is on the clipboard now</string>
+
+    <!-- @layout/include_id_confirmation -->
+    <string name="include_id_confirmation_instructions">Please confirm the text is clear and the photo is free of glare</string>
+    <string name="include_id_confirmation_retry_button">Retry</string>
+    <string name="include_id_confirmation_confirm_button">Confirm</string>
+
+    <!-- @layout/include_timeout_view -->
+    <string name="include_timeout_view_message">It looks like you are having trouble scanning the document.</string>
+    <string name="include_timeout_view_capture_manually_button">Capture Manually</string>
+    <string name="include_timeout_view_try_again_button">Try Again</string>
+    
+    <!-- @layout/dialog_fragment_job_id_form -->
+    <string name="dialog_fragment_job_id_form_instructions">Please enter a valid Job ID</string>
+    <string name="dialog_fragment_job_id_form_job_id_label">Job ID</string>
+    <string name="dialog_fragment_job_id_form_accept_button">Accept</string>
+    <string name="dialog_fragment_job_id_form_cancel_button">Cancel</string>
+    <string name="dialog_fragment_job_id_form_error_message">You need to fill the Job ID field</string>
+
+    <!-- @layout/fragment_welcome_menu -->
+    <string name="fragment_welcome_menu_title">Welcome</string>
+    <string name="fragment_welcome_menu_welcome_message">Welcome to the Vouched sample app</string>
+    <string name="fragment_welcome_menu_verification_flow_button">Try verification flow</string>
+    <string name="fragment_welcome_menu_reverification_flow_button">Try reverification flow</string>
+
+    <!-- @layout/fragment_reverification -->
+    <string name="fragment_reverification_title">Reverification</string>
+</resources>

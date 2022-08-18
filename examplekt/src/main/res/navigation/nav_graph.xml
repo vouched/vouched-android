@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/welcomeMenuFragment">
+    <fragment
+        tools:layout="@layout/fragment_welcome_form"
+        android:id="@+id/welcomeFormFragment"
+        android:name="id.vouched.android.kt.example.WelcomeFormFragment"
+        android:label="@string/fragment_welcome_form_title" >
+        <action
+            android:id="@+id/action_welcomeFragment_to_documentScanningFragment"
+            app:destination="@id/documentScanningFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/documentScanningFragment"
+        tools:layout="@layout/fragment_document_scanning"
+        android:name="id.vouched.android.kt.example.DocumentScanningFragment"
+        android:label="@string/fragment_document_scanning_title" >
+        <argument
+            android:name="firstName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="lastName"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="allowCameraFlash"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <action
+            android:id="@+id/action_documentScanningFragment_to_faceScanningFragment"
+            app:destination="@id/faceScanningFragment"
+            app:popUpTo="@id/welcomeFormFragment" />
+        <argument
+            android:name="allowIdConfirmation"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="allowOrientationCheck"
+            app:argType="boolean"
+            android:defaultValue="false" />
+        <argument
+            android:name="timeoutMilliseconds"
+            app:argType="long"
+            android:defaultValue="-1L" />
+    </fragment>
+    <fragment
+        android:id="@+id/faceScanningFragment"
+        tools:layout="@layout/fragment_face_scanning"
+        android:name="id.vouched.android.kt.example.FaceScanningFragment"
+        android:label="@string/fragment_face_scanning_title" >
+        <argument
+            android:name="session"
+            app:argType="id.vouched.android.VouchedSession" />
+        <action
+            android:id="@+id/action_faceScanningFragment_to_resultsFragment"
+            app:destination="@id/resultsFragment"
+            app:popUpTo="@id/welcomeFormFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/resultsFragment"
+        tools:layout="@layout/fragment_results"
+        android:name="id.vouched.android.kt.example.ResultsFragment"
+        android:label="@string/fragment_results_title" >
+        <argument
+            android:name="session"
+            app:argType="id.vouched.android.VouchedSession" />
+        <action
+            android:id="@+id/action_resultsFragment_to_reverificationFragment"
+            app:destination="@id/reverificationFragment"
+            app:popUpTo="@id/welcomeFormFragment" />
+    </fragment>
+
+    <fragment
+        tools:layout="@layout/fragment_reverification"
+        android:id="@+id/reverificationFragment"
+        android:name="id.vouched.android.kt.example.ReverificationFragment"
+        android:label="@string/fragment_reverification_title" >
+        <argument
+            android:name="jobId"
+            app:argType="string" />
+    </fragment>
+    <fragment
+        tools:layout="@layout/fragment_welcome_menu"
+        android:id="@+id/welcomeMenuFragment"
+        android:name="id.vouched.android.kt.example.WelcomeMenuFragment"
+        android:label="@string/fragment_welcome_menu_title" >
+        <action
+            android:id="@+id/action_welcomeMenuFragment_to_welcomeFormFragment"
+            app:destination="@id/welcomeFormFragment" />
+        <action
+            android:id="@+id/action_welcomeMenuFragment_to_jobIdFormDialogFragment"
+            app:destination="@id/jobIdFormDialogFragment" />
+    </fragment>
+    <dialog
+        tools:layout="@layout/dialog_fragment_job_id_form"
+        android:id="@+id/jobIdFormDialogFragment"
+        android:name="id.vouched.android.kt.example.JobIdFormDialogFragment"
+        android:label="JobIdFormDialogFragment" >
+        <action
+            android:id="@+id/action_jobIdFormDialogFragment_to_reverificationFragment"
+            app:destination="@id/reverificationFragment"
+            app:popUpTo="@id/welcomeMenuFragment" />
+    </dialog>
+</navigation>

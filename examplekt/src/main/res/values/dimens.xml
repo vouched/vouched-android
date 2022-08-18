@@ -1,0 +1,4 @@
+<resources>
+    <dimen name="size_xs">12dp</dimen>
+    <dimen name="size_s">16dp</dimen>
+</resources>

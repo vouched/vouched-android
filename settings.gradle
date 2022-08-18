@@ -1,2 +1,1 @@
-include ':example'
-rootProject.name = "vouched-android-example"
+include ':examplekt'
