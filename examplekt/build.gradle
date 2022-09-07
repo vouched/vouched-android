@@ -14,7 +14,7 @@ android {
         minSdk 22
         targetSdk 32
         versionCode 1
-        versionName "1.0"
+        versionName "1.3.2"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "API_KEY", API_KEY
@@ -58,7 +58,7 @@ dependencies {
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
-    implementation 'id.vouched.android:vouched-sdk:1.3.0'
+    implementation 'id.vouched.android:vouched-sdk:1.3.2'
 
     // MLKit libraries for onboard detection
     // MLKit libraries for face detection can be implemented in two ways Unbundled and Bundled

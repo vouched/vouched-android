@@ -136,7 +136,7 @@ class DocumentScanningFragment : Fragment() {
             val optionsBuilder = VouchedCameraHelperOptions.Builder()
                 .withCardDetectOptions(
                     CardDetectOptions.Builder()
-                        .withEnableDistanceCheck(true)
+                        .withEnableDistanceCheck(false)
                         .withEnhanceInfoExtraction(true)
                         .withEnableOrientationCheck(navigationArgs.allowOrientationCheck)
                         .build()
@@ -337,6 +337,11 @@ class DocumentScanningFragment : Fragment() {
         Params.Builder()
             .withFirstName(navigationArgs.firstName)
             .withLastName(navigationArgs.lastName)
+            .withEnableIPAddress(true)
+            .withEnablePhysicalAddress(true)
+            .withEnableDarkWeb(true)
+            .withEnableCrossCheck(true)
+            .withEnableAAMVA(true)
 
     private fun showConfirmationView(image: Bitmap, confirmAction: () -> Unit) {
         idConfirmationBinding.root.visibility = View.VISIBLE
