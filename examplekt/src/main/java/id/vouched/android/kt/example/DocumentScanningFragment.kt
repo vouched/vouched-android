@@ -339,9 +339,6 @@ class DocumentScanningFragment : Fragment() {
             .withLastName(navigationArgs.lastName)
             .withEnableIPAddress(true)
             .withEnablePhysicalAddress(true)
-            .withEnableDarkWeb(true)
-            .withEnableCrossCheck(true)
-            .withEnableAAMVA(true)
 
     private fun showConfirmationView(image: Bitmap, confirmAction: () -> Unit) {
         idConfirmationBinding.root.visibility = View.VISIBLE
