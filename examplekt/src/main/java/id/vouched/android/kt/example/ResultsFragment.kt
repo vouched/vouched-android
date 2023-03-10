@@ -71,7 +71,10 @@ class ResultsFragment : Fragment() {
 
                 binding.reverificationFlowButton.setOnClickListener {
                     ResultsFragmentDirections.actionResultsFragmentToReverificationFragment(
-                        jobResponse.job.id
+                        jobResponse.job.id,
+                        null,
+                        null,
+                        session
                     ).let { direction ->
                         findNavController().navigate(direction)
                     }
@@ -89,29 +92,25 @@ class ResultsFragment : Fragment() {
         resultFaceMatch: Boolean,
         jobId: String
     ) {
-        binding.validIdTextView.text = "Valid ID - $resultId"
         binding.validIdIcon.setImageResource(
-            if (resultId) R.drawable.check else R.drawable.x
+            if (resultId) R.drawable.ic_check else R.drawable.ic_cancel
         )
 
-        binding.validSelfieTextView.text = "Valid Selfie - $resultSelfie"
         binding.validSelfieIcon.setImageResource(
-            if (resultSelfie) R.drawable.check else R.drawable.x
+            if (resultSelfie) R.drawable.ic_check else R.drawable.ic_cancel
         )
 
-        binding.validMatchTextView.text = "Valid Match - $resultSuccess"
         binding.validMatchIcon.setImageResource(
-            if (resultSuccess) R.drawable.check else R.drawable.x
+            if (resultSuccess) R.drawable.ic_check else R.drawable.ic_cancel
         )
 
-        binding.nameTextView.text = "Name - $resultName"
+        binding.nameTextView.text = resultName
         binding.nameIcon.setImageResource(
-            if (resultNameMatch) R.drawable.check else R.drawable.x
+            if (resultNameMatch) R.drawable.ic_check else R.drawable.ic_cancel
         )
 
-        binding.faceMatchTextView.text = "Face Match - $resultFaceMatch"
         binding.faceMatchIcon.setImageResource(
-            if (resultFaceMatch) R.drawable.check else R.drawable.x
+            if (resultFaceMatch) R.drawable.ic_check else R.drawable.ic_cancel
         )
 
         binding.jobIdTextView.text = jobId

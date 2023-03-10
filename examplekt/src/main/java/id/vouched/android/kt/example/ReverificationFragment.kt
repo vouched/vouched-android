@@ -90,7 +90,18 @@ class ReverificationFragment : Fragment() {
     }
 
     private fun setupVouchedSdk() {
-        session = VouchedSession(BuildConfig.API_KEY, VouchedSessionParameters.Builder().build())
+        if (navigationArgs.apiKey == null && navigationArgs.session == null) {
+            Log.e(TAG, "it is not possible to continue without an API Key or a VouchedSession")
+            return
+        }
+        session = navigationArgs.session ?: VouchedSession(
+            navigationArgs.apiKey,
+            VouchedSessionParameters.Builder().apply {
+                navigationArgs.groupId?.let { groupId ->
+                    withGroupId(groupId)
+                }
+            }.build()
+        )
         try {
             val mainExecutor = ContextCompat.getMainExecutor(requireContext())
             val options = VouchedCameraHelperOptions.Builder()

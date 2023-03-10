@@ -24,7 +24,7 @@
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/instructions_view"
         android:padding="@dimen/size_s"
-        android:background="@color/black_50"
+        android:background="@drawable/rounded_rect_30dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:orientation="horizontal"
@@ -35,8 +35,9 @@
             android:id="@+id/instructions_text_view"
             android:layout_weight="1"
             android:layout_width="0dp"
+            android:textAppearance="?textAppearanceBody1"
             android:layout_height="wrap_content"
-            android:textColor="@color/white_100"
+            android:textColor="?colorPrimary"
             tools:text="Instructions label" />
 
         <com.google.android.material.progressindicator.CircularProgressIndicator

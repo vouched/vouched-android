@@ -1,13 +1,18 @@
 package id.vouched.android.kt.example
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.graphics.Bitmap
+import android.location.Location
+import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -35,6 +40,7 @@ import id.vouched.android.kt.example.utils.launchAppDetailsSettings
 import id.vouched.android.kt.example.utils.lockUiShowingLoadingDialog
 import id.vouched.android.kt.example.utils.permissionsActivityResultLauncher
 import id.vouched.android.kt.example.utils.showCancelableMessage
+import id.vouched.android.model.GeoLocation
 import id.vouched.android.model.Insight
 import id.vouched.android.model.Params
 
@@ -104,6 +110,15 @@ class DocumentScanningFragment : Fragment() {
         binding.documentManualCaptureView
     }
 
+    private val locationPermissions = arrayOf(
+        Manifest.permission.ACCESS_FINE_LOCATION,
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
+
+    private var currentLocation: Location? = null
+
+    private val geoLocationEnabled by lazy { navigationArgs.geoLocationEnabled }
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -130,7 +145,14 @@ class DocumentScanningFragment : Fragment() {
     }
 
     private fun setupVouchedSdk() {
-        session = VouchedSession(BuildConfig.API_KEY, VouchedSessionParameters.Builder().build())
+        session = VouchedSession(
+            navigationArgs.apiKey,
+            VouchedSessionParameters.Builder().apply {
+                navigationArgs.groupId?.let { groupId ->
+                    withGroupId(groupId)
+                }
+            }.build()
+        )
         try {
             val mainExecutor = ContextCompat.getMainExecutor(requireContext())
             val optionsBuilder = VouchedCameraHelperOptions.Builder()
@@ -172,20 +194,62 @@ class DocumentScanningFragment : Fragment() {
     }
 
     private fun tryResumeCamera() {
-        val permissions: Map<String, Boolean> = checkSelfPermissionsCompat(requiredPermissions)
-        if (permissions.containsValue(false)) {
-            // if one of the required permissions is not granted, do not try to resume the camera
-            if (!permissionAlreadyRequested) {
-                // if already asked the user for permissions once, you should not try to ask them again
-                permissionsActivityResultLauncher.launch(requiredPermissions)
-            }
+        val permissionsToCheck = if (geoLocationEnabled) {
+            requiredPermissions.plus(locationPermissions)
+        } else {
+            requiredPermissions
+        }
+        val permissions: Map<String, Boolean> = checkSelfPermissionsCompat(permissionsToCheck)
+        val requiredPermissionsGuaranteed = !requiredPermissions.any { permission ->
+            permissions[permission] == false
+        }
+        val locationPermissionsGuaranteed = !locationPermissions.any { permission ->
+            permissions[permission] != null && permissions[permission] == false
+        }
+
+        if ((!requiredPermissionsGuaranteed || !locationPermissionsGuaranteed) && !permissionAlreadyRequested) {
+            permissionsActivityResultLauncher.launch(permissionsToCheck)
+        } else if (!requiredPermissionsGuaranteed) {
             binding.missingPermissionErrorMessageView.root.visibility = View.VISIBLE
             binding.instructionsView.visibility = View.GONE
         } else {
-            // once all required permissions are granted, it is possible to resume the camera
             cameraHelper.onResume()
+            tryToGetLocation()
             binding.instructionsView.visibility = View.VISIBLE
             binding.missingPermissionErrorMessageView.root.visibility = View.GONE
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun tryToGetLocation() {
+        if (!geoLocationEnabled) { return }
+        if (!checkSelfPermissionsCompat(locationPermissions).containsValue(false)) {
+            binding.locationTextView.text = "Getting geolocation data"
+            requireContext().getSystemService<LocationManager>()?.let { locationManager ->
+                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                    locationManager.getCurrentLocation(
+                        LocationManager.GPS_PROVIDER,
+                        null,
+                        ContextCompat.getMainExecutor(requireContext())
+                    ) { location ->
+                        currentLocation = location
+                        binding.locationTextView.text = "Lat: ${location.latitude} Lng: ${location.longitude}"
+                    }
+                } else {
+                    locationManager.requestSingleUpdate(
+                        LocationManager.GPS_PROVIDER,
+                        { location ->
+                            currentLocation = location
+                            binding.locationTextView.text = "Lat: ${location.latitude} Lng: ${location.longitude}"
+                        },
+                        null
+                    )
+                }
+            } ?: run {
+                binding.locationTextView.text = "Unable to determine user location"
+            }
+        } else {
+            binding.locationTextView.text = "Unable to determine user location"
         }
     }
 
@@ -339,6 +403,16 @@ class DocumentScanningFragment : Fragment() {
             .withLastName(navigationArgs.lastName)
             .withEnableIPAddress(true)
             .withEnablePhysicalAddress(true)
+            .withEnableDarkWeb(true)
+            .withEnableCrossCheck(true)
+            .withEnableAAMVA(true).apply {
+                if (!geoLocationEnabled) { return@apply }
+                currentLocation?.let {
+                    withGeoLocation(GeoLocation(it.latitude, it.longitude, null))
+                } ?: run {
+                    withGeoLocation(GeoLocation(null, null, "Unable to determine user location"))
+                }
+            }
 
     private fun showConfirmationView(image: Bitmap, confirmAction: () -> Unit) {
         idConfirmationBinding.root.visibility = View.VISIBLE
@@ -395,8 +469,9 @@ class DocumentScanningFragment : Fragment() {
         binding.instructionsAnimationView.visibility = View.GONE
     }
     private fun handleInstructionsForBarcodeResult(barcodeResult: BarcodeResult?) {
-        binding.instructionsTextView.text = if (barcodeResult == null)
-            "Focus camera on back of ID" else ""
+        binding.instructionsTextView.text = if (barcodeResult == null) {
+            "Focus camera on back of ID"
+        } else ""
     }
 
     private fun getAMessageFromInsight(insight: Insight): String {

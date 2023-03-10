@@ -2,4 +2,9 @@
 <resources>
     <color name="black_50">#80000000</color>
     <color name="white_100">#FFFFFF</color>
+    <color name="white_75">#BFFFFFFF</color>
+    <color name="vouched_purple_blue">#5047FF</color>
+    <color name="vouched_purple_blue_200">#afaaff</color>
+    <color name="vouched_purple_blue_800">#2c278c</color>
+    <color name="vouched_midnight_blue">#100441</color>
 </resources>

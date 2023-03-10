@@ -7,11 +7,14 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.DialogFragment
 import androidx.navigation.fragment.findNavController
+import androidx.navigation.fragment.navArgs
 import id.vouched.android.kt.example.databinding.DialogFragmentJobIdFormBinding
 
 class JobIdFormDialogFragment : DialogFragment() {
 
     private lateinit var binding: DialogFragmentJobIdFormBinding
+
+    private val navigationArgs: JobIdFormDialogFragmentArgs by navArgs()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,7 +49,10 @@ class JobIdFormDialogFragment : DialogFragment() {
 
     private fun navToReverification(jobId: String) {
         JobIdFormDialogFragmentDirections.actionJobIdFormDialogFragmentToReverificationFragment(
-            jobId
+            jobId,
+            navigationArgs.apiKey,
+            navigationArgs.groupId,
+            null
         ).let { direction ->
             findNavController().navigate(direction)
         }

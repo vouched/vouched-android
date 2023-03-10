@@ -8,120 +8,151 @@
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:background="?colorPrimary"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         xmlns:app="http://schemas.android.com/apk/res-auto">
 
-        <ScrollView
-            android:padding="@dimen/size_s"
-            android:layout_marginBottom="@dimen/size_s"
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/appCompatImageView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:cropToPadding="false"
+            android:paddingBottom="80dp"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_welcome_background"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <com.google.android.material.card.MaterialCardView
+            app:cardBackgroundColor="@color/white_75"
+            app:shapeAppearance="@style/ShapeAppearance.Vouched.WelcomeCard"
+            android:elevation="8dp"
+            app:cardElevation="8dp"
+            android:layout_marginTop="100dp"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toTopOf="@id/start_button"
             android:layout_width="match_parent"
             android:layout_height="0dp">
-            <androidx.appcompat.widget.LinearLayoutCompat
-                android:paddingBottom="@dimen/size_s"
-                android:orientation="vertical"
+
+            <ScrollView
+                android:scrollbars="none"
+                android:padding="@dimen/size_s"
+                android:layout_marginBottom="64dp"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <androidx.appcompat.widget.AppCompatTextView
-                    style="?textAppearanceHeadlineSmall"
-                    android:textAlignment="center"
-                    android:layout_marginVertical="@dimen/size_s"
-                    android:text="@string/fragment_welcome_form_welcome_message"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_marginTop="@dimen/size_s"
+                android:layout_height="match_parent">
+                <androidx.appcompat.widget.LinearLayoutCompat
+                    android:paddingBottom="@dimen/size_s"
+                    android:orientation="vertical"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/first_name_text_view"
-                        android:hint="@string/fragment_welcome_first_name_label"
-                        android:text="@={viewModel.firstName}"
+                    <androidx.appcompat.widget.AppCompatTextView
+                        android:textAppearance="?textAppearanceHeadline5"
+                        android:textStyle="bold"
+                        android:textAlignment="center"
+                        android:layout_marginVertical="@dimen/size_s"
+                        android:text="@string/fragment_welcome_form_welcome_message"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"/>
-                </com.google.android.material.textfield.TextInputLayout>
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_marginTop="@dimen/size_s"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/last_name_text_view"
-                        android:hint="@string/fragment_welcome_last_name_label"
-                        android:text="@={viewModel.lastName}"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_marginTop="@dimen/size_s"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"/>
-                </com.google.android.material.textfield.TextInputLayout>
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/allow_camera_flash_check_box"
-                    android:layout_marginTop="@dimen/size_xs"
-                    android:checked="@={viewModel.allowCameraFlash}"
-                    android:text="@string/fragment_welcome_form_allow_camera_flash_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/allow_id_confirmation_check_box"
-                    android:layout_marginTop="@dimen/size_xs"
-                    android:checked="@={viewModel.allowIdConfirmation}"
-                    android:text="@string/fragment_welcome_form_allow_id_confirmation_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/allow_orientation_check_box"
-                    android:layout_marginTop="@dimen/size_xs"
-                    android:checked="@={viewModel.allowOrientationCheck}"
-                    android:text="@string/fragment_welcome_form_allow_orientation_check_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-
-                <com.google.android.material.checkbox.MaterialCheckBox
-                    android:id="@+id/allow_timeout"
-                    android:layout_marginTop="@dimen/size_xs"
-                    android:checked="@={viewModel.allowTimeout}"
-                    android:text="@string/fragment_welcome_form_allow_timeout_check_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-                <com.google.android.material.textfield.TextInputLayout
-                    app:errorEnabled="true"
-                    error="@{viewModel.showTimeoutError ? @string/fragment_welcome_form_allow_timeout_error_message(viewModel.minTimeoutInMilliseconds) : null}"
-                    android:layout_marginStart="@dimen/size_s"
-                    android:enabled="@{viewModel.allowTimeout}"
-                    android:layout_marginTop="@dimen/size_s"
-                    android:layout_marginBottom="@dimen/size_s"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/timeout_text_view"
-                        android:inputType="number"
-                        android:digits="0123456789"
-                        android:hint="@string/fragment_welcome_form_allow_timeout_label"
-                        android:text="@={DataBindingConverters.longToString(viewModel.timeoutMilliseconds)}"
+                        android:layout_height="wrap_content">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/first_name_text_view"
+                            android:hint="@string/fragment_welcome_first_name_label"
+                            android:text="@={viewModel.firstName}"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_marginTop="@dimen/size_s"
                         android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/last_name_text_view"
+                            android:hint="@string/fragment_welcome_last_name_label"
+                            android:text="@={viewModel.lastName}"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/allow_camera_flash_check_box"
+                        android:layout_marginTop="@dimen/size_xs"
+                        android:checked="@={viewModel.allowCameraFlash}"
+                        android:text="@string/fragment_welcome_form_allow_camera_flash_label"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
-                </com.google.android.material.textfield.TextInputLayout>
 
-            </androidx.appcompat.widget.LinearLayoutCompat>
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/allow_id_confirmation_check_box"
+                        android:layout_marginTop="@dimen/size_xs"
+                        android:checked="@={viewModel.allowIdConfirmation}"
+                        android:text="@string/fragment_welcome_form_allow_id_confirmation_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
-        </ScrollView>
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/allow_orientation_check_box"
+                        android:layout_marginTop="@dimen/size_xs"
+                        android:checked="@={viewModel.allowOrientationCheck}"
+                        android:text="@string/fragment_welcome_form_allow_orientation_check_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/allow_geolocation"
+                        android:layout_marginTop="@dimen/size_xs"
+                        android:checked="@={viewModel.allowGeoLocation}"
+                        android:text="@string/fragment_welcome_form_allow_geolocation_check_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:enabled="@{viewModel.startButtonEnabled}"
-            android:layout_margin="@dimen/size_s"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
-            android:text="@string/fragment_welcome_form_start_button_text"
-            android:onClick="@{(v) -> viewModel.startButtonAction()}"
-            android:id="@+id/start_button"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/allow_timeout"
+                        android:layout_marginTop="@dimen/size_xs"
+                        android:checked="@={viewModel.allowTimeout}"
+                        android:text="@string/fragment_welcome_form_allow_timeout_check_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                    <com.google.android.material.textfield.TextInputLayout
+                        app:errorEnabled="true"
+                        error="@{viewModel.showTimeoutError ? @string/fragment_welcome_form_allow_timeout_error_message(viewModel.minTimeoutInMilliseconds) : null}"
+                        android:layout_marginStart="@dimen/size_s"
+                        android:enabled="@{viewModel.allowTimeout}"
+                        android:layout_marginTop="@dimen/size_s"
+                        android:layout_marginBottom="@dimen/size_s"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/timeout_text_view"
+                            android:inputType="number"
+                            android:digits="0123456789"
+                            android:hint="@string/fragment_welcome_form_allow_timeout_label"
+                            android:text="@={DataBindingConverters.longToString(viewModel.timeoutMilliseconds)}"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                </androidx.appcompat.widget.LinearLayoutCompat>
+
+            </ScrollView>
+            <com.google.android.material.button.MaterialButton
+                style="@style/Theme.Vouched.Button"
+                android:enabled="@{viewModel.startButtonEnabled}"
+                android:layout_margin="@dimen/size_s"
+                android:layout_gravity="bottom|center_horizontal"
+                android:text="@string/fragment_welcome_form_start_button_text"
+                android:onClick="@{(v) -> viewModel.startButtonAction()}"
+                android:id="@+id/start_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </com.google.android.material.card.MaterialCardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </layout>

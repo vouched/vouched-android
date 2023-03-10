@@ -20,5 +20,12 @@
 /examplekt/src/main/jniLibs/
 /examplekt/gradle.properties
 
+# vouched files
+vouched/libs/
+vouched/gradle/
+vouched/gradlew
+vouched/gradlew.bat
+vouched/local.properties
+
 deploy.properties
 

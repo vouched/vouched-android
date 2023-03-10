@@ -1,7 +1,7 @@
 # Vouched
 
 [![GitHub release](https://img.shields.io/github/release/vouched/vouched-android.svg?maxAge=60)](https://github.com/vouched/vouched-android/releases)
-[![License](https://img.shields.io/github/license/vouched/vouched-android)](LICENSE)
+[![License](https://img.shields.io/github/license/vouched/vouched-android)](https://github.com/vouched/vouched-android/blob/master/LICENSE)
 
 ## Run Example
 
@@ -10,10 +10,10 @@ Clone this repo and change directory to _example_
 ```shell
 git clone https://github.com/vouched/vouched-android
 
-cd vouched-android/examplekt
+cd vouched-android/example
 ```
 
-Then, follow steps listed on the [example README](examplekt/README.md)
+Then, follow steps listed on the [example README](https://github.com/vouched/vouched-android/blob/master/example/README.md)
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ Then, follow steps listed on the [example README](examplekt/README.md)
 #### Add the package to your existing project
 
 ```shell
-implementation 'id.vouched.android:vouched-sdk:1.3.2'
+implementation 'id.vouched.android:vouched-sdk:1.2.0'
 ```
 
 #### (Optional) Add barcode scanning
@@ -60,7 +60,7 @@ This section will provide a _step-by-step_ path to understand the Vouched SDK th
 
 0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
 
-0. [An overview of SDK components](SDKOverview.md)
+0. [An overview of SDK components](https://github.com/vouched/vouched-android/blob/master/SDKOverview.md)
 
 1. [Run the Example](#run-example)
    - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each verification step.
@@ -260,22 +260,24 @@ This class handles detecting the encoded barcode data. Only applicable for ID an
 ##### Initialize
 
 ```java
-BarcodeDetect barcodeDetect = new BarcodeDetect(this);
+BarcodeDetect barcodeDetect = new BarcodeDetect(assetManager, barcodedetectresultlistener);
 ```
 
-| Parameter Type                                                 | Nullable |
-| -------------------------------------------------------------- | :------: |
+| Parameter Type                                                        | Nullable |
+|-----------------------------------------------------------------------| :------: |
+| android.content.res.AssetManager                                      |  false   |
 | [BarcodeDetect.OnBarcodeResultListener](#barcodedetectresultlistener) |  false   |
 
 ##### Process Image
 
 ```java
-cardDetect.findBarcode(imageProxy);
+cardDetect.findBarcode(imageProxy, handler);
 ```
 
 | Parameter Type                  | Nullable |
-| ------------------------------- | :------: |
+|---------------------------------| :------: |
 | androidx.camera.core.ImageProxy |  false   |
+| android.os.Handler              |  false   |
 
 ### FaceDetect
 

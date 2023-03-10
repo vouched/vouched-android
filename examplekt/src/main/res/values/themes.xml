@@ -1,9 +1,53 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.Vouched" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.Vouched" parent="Theme.Material3.Light.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/vouched_purple_blue</item>
+        <item name="colorSecondary">@color/vouched_midnight_blue</item>
+        <item name="colorPrimaryContainer">@color/vouched_purple_blue_200</item>
+        <item name="colorOnPrimaryContainer">@color/vouched_purple_blue_800</item>
+        <item name="alertDialogTheme">@style/Theme.Vouched.Dialog</item>
+        <item name="android:alertDialogTheme">?alertDialogTheme</item>
+        <item name="android:dialogTheme">?alertDialogTheme</item>
+        <item name="dialogTheme">?alertDialogTheme</item>
+        <item name="floatingActionButtonPrimaryStyle">@style/Theme.Vouched.FloatingActionButton.Primary</item>
     </style>
 
     <style name="Theme.Vouched" parent="Base.Theme.Vouched" />
+
+    <style name="Theme.Vouched.Translucent" parent="Theme.Vouched">
+        <item name="android:windowTranslucentNavigation">true</item>
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
+    <style name="ShapeAppearance.Vouched.WelcomeCard" parent="ShapeAppearance.Material3.Corner.None">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+        <item name="cornerSizeTopLeft">30dp</item>
+        <item name="cornerSizeTopRight">30dp</item>
+    </style>
+
+
+    <style name="Theme.Vouched.Button" parent="ShapeAppearanceOverlay.Material3.Button">
+    </style>
+    <style name="Theme.Vouched.Button.OutlinedButton" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">?colorPrimary</item>
+        <item name="strokeWidth">2dp</item>
+    </style>
+
+    <style name="Theme.Vouched.Dialog" parent="Theme.Material3.Light.Dialog">
+        <item name="android:windowBackground">@drawable/rounded_rect_30dp</item>
+        <item name="colorPrimary">@color/vouched_purple_blue</item>
+        <item name="colorSecondary">@color/vouched_midnight_blue</item>
+    </style>
+
+    <style name="Theme.Vouched.FloatingActionButton.Primary" parent="Widget.Material3.FloatingActionButton.Primary">
+        <item name="materialThemeOverlay">@style/ThemeOverlay.Theme.Vouched.FloatingActionButton.Primary</item>
+    </style>
+    <style name="ThemeOverlay.Theme.Vouched.FloatingActionButton.Primary" parent="">
+        <item name="colorContainer">?colorPrimary</item>
+        <item name="colorOnContainer">?colorOnPrimary</item>
+    </style>
+
 </resources>

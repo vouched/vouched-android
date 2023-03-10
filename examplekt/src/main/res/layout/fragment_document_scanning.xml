@@ -13,6 +13,17 @@
             tools:layout_editor_absoluteX="-182dp"
             tools:layout_editor_absoluteY="207dp" />
 
+    <androidx.appcompat.widget.AppCompatTextView
+        android:id="@+id/location_text_view"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="@dimen/size_xs"
+        android:background="@color/black_50"
+        android:textColor="@color/white_100"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
     <include
         android:id="@+id/missing_permission_error_message_view"
         android:layout_width="match_parent"
@@ -24,19 +35,19 @@
     <androidx.appcompat.widget.LinearLayoutCompat
         android:id="@+id/instructions_view"
         android:padding="@dimen/size_s"
-        android:background="@color/black_50"
+        android:background="@drawable/rounded_rect_30dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <androidx.appcompat.widget.AppCompatTextView
-            android:layout_gravity="center_vertical"
+            android:textAppearance="?textAppearanceBody1"
+            android:padding="@dimen/size_s"
+            android:layout_gravity="center"
             android:id="@+id/instructions_text_view"
-            android:layout_weight="1"
-            android:layout_width="0dp"
+            android:textColor="?colorPrimary"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/white_100"
             tools:text="Instructions label" />
 
     </androidx.appcompat.widget.LinearLayoutCompat>

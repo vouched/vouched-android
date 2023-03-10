@@ -16,7 +16,8 @@ class WelcomeFormViewModel : ViewModel() {
             val allowCameraFlash: Boolean,
             val allowIdConfirmation: Boolean,
             val allowOrientationCheck: Boolean,
-            val timeoutMilliseconds: Long
+            val timeoutMilliseconds: Long,
+            val allowGeolocation: Boolean
         ) : Event()
     }
 
@@ -37,6 +38,8 @@ class WelcomeFormViewModel : ViewModel() {
     val allowOrientationCheck = MutableLiveData(true)
 
     val allowTimeout = MutableLiveData(false)
+
+    val allowGeoLocation = MutableLiveData(false)
 
     val timeoutMilliseconds = MutableLiveData(minTimeoutInMilliseconds)
 
@@ -73,7 +76,8 @@ class WelcomeFormViewModel : ViewModel() {
                     allowCameraFlash.value ?: false,
                     allowIdConfirmation.value ?: false,
                     allowOrientationCheck.value ?: false,
-                    timeout
+                    timeout,
+                    allowGeoLocation.value ?: false
                 )
             )
         }

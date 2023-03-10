@@ -6,13 +6,14 @@
     <!-- @layout/fragment_welcome_form -->
     <string name="fragment_welcome_form_title">Welcome</string>
     <string name="fragment_welcome_form_start_button_text">Start verification</string>
-    <string name="fragment_welcome_form_welcome_message">Welcome to the Vouched identity verification sample</string>
+    <string name="fragment_welcome_form_welcome_message">Hello!\nWelcome to Vouched</string>
     <string name="fragment_welcome_first_name_label">First name (optional)</string>
     <string name="fragment_welcome_last_name_label">Last name (optional)</string>
     <string name="fragment_welcome_form_allow_camera_flash_label">Allow camera flash</string>
     <string name="fragment_welcome_form_allow_id_confirmation_label">Ask for ID confirmation</string>
     <string name="fragment_welcome_form_allow_orientation_check_label">Allow document orientation instruction</string>
     <string name="fragment_welcome_form_allow_timeout_check_label">Allow timeout</string>
+    <string name="fragment_welcome_form_allow_geolocation_check_label">Allow Geolocation</string>
     <string name="fragment_welcome_form_allow_timeout_label">Milliseconds</string>
     <string name="fragment_welcome_form_allow_timeout_error_message">Must be at least %1$d milliseconds</string>
 
@@ -33,6 +34,11 @@
     <string name="fragment_results_reverification_flow_button">Try reverification now</string>
     <string name="fragment_results_job_id_clipboard_button">Copy Job ID and try reverification later</string>
     <string name="fragment_results_job_id_copied_successfully_message">The Job ID is on the clipboard now</string>
+    <string name="fragment_results_valid_id_label">Valid ID</string>
+    <string name="fragment_results_valid_selfie_label">Valid Selfie</string>
+    <string name="fragment_results_valid_match_label">Valid Match</string>
+    <string name="fragment_results_valid_name_label">Valid Name</string>
+    <string name="fragment_results_face_match_label">Face Match</string>
 
     <!-- @layout/include_id_confirmation -->
     <string name="include_id_confirmation_instructions">Please confirm the text is clear and the photo is free of glare</string>
@@ -45,7 +51,7 @@
     <string name="include_timeout_view_try_again_button">Try Again</string>
     
     <!-- @layout/dialog_fragment_job_id_form -->
-    <string name="dialog_fragment_job_id_form_instructions">Please enter a valid Job ID</string>
+    <string name="dialog_fragment_job_id_form_instructions">Please enter a valid Job Id from a previous verification</string>
     <string name="dialog_fragment_job_id_form_job_id_label">Job ID</string>
     <string name="dialog_fragment_job_id_form_accept_button">Accept</string>
     <string name="dialog_fragment_job_id_form_cancel_button">Cancel</string>
@@ -53,10 +59,18 @@
 
     <!-- @layout/fragment_welcome_menu -->
     <string name="fragment_welcome_menu_title">Welcome</string>
-    <string name="fragment_welcome_menu_welcome_message">Welcome to the Vouched sample app</string>
+    <string name="fragment_welcome_menu_welcome_message">Welcome to Vouched\nDemo App</string>
+    <string name="fragment_welcome_menu_info">Test us! Its fast and simple.</string>
     <string name="fragment_welcome_menu_verification_flow_button">Try verification flow</string>
     <string name="fragment_welcome_menu_reverification_flow_button">Try reverification flow</string>
 
     <!-- @layout/fragment_reverification -->
     <string name="fragment_reverification_title">Reverification</string>
+
+    <!-- @layout/dialog_fragment_api_key_form -->
+    <string name="dialog_fragment_api_key_form_instructions">An API Key is required to continue, please enter a valid API Key here</string>
+    <string name="dialog_fragment_api_key_form_api_key_label">API Key</string>
+    <string name="dialog_fragment_api_key_form_group_id_label">Group Id (optional)</string>
+    <string name="dialog_fragment_api_key_form_accept_button">Accept</string>
+    <string name="dialog_fragment_api_key_error_message">You need to fill the API Key field</string>
 </resources>
