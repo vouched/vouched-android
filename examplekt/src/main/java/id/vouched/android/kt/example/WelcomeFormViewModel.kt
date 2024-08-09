@@ -13,6 +13,7 @@ class WelcomeFormViewModel : ViewModel() {
         data class NavToNext(
             val firstName: String?,
             val lastName: String?,
+            val birthDate: String?,
             val allowCameraFlash: Boolean,
             val allowIdConfirmation: Boolean,
             val allowOrientationCheck: Boolean,
@@ -30,6 +31,8 @@ class WelcomeFormViewModel : ViewModel() {
     val firstName = MutableLiveData<String>()
 
     val lastName = MutableLiveData<String>()
+
+    val birthDate = MutableLiveData<String>()
 
     val allowCameraFlash = MutableLiveData(false)
 
@@ -73,6 +76,7 @@ class WelcomeFormViewModel : ViewModel() {
                 Event.NavToNext(
                     firstName.value ?: "",
                     lastName.value ?: "",
+                    birthDate.value ?: "",
                     allowCameraFlash.value ?: false,
                     allowIdConfirmation.value ?: false,
                     allowOrientationCheck.value ?: false,

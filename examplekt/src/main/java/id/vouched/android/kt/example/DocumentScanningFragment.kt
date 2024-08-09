@@ -401,6 +401,7 @@ class DocumentScanningFragment : Fragment() {
         Params.Builder()
             .withFirstName(navigationArgs.firstName)
             .withLastName(navigationArgs.lastName)
+            .withBirthDate(navigationArgs.birthDate)
             .withEnableIPAddress(true)
             .withEnablePhysicalAddress(true)
             .withEnableDarkWeb(true)

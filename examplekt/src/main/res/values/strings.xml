@@ -73,4 +73,5 @@
     <string name="dialog_fragment_api_key_form_group_id_label">Group Id (optional)</string>
     <string name="dialog_fragment_api_key_form_accept_button">Accept</string>
     <string name="dialog_fragment_api_key_error_message">You need to fill the API Key field</string>
+    <string name="fragment_welcome_birthdate_label">Birthdate</string>
 </resources>

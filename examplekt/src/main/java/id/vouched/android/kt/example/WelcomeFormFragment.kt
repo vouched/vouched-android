@@ -43,6 +43,7 @@ class WelcomeFormFragment : Fragment() {
                         val action = WelcomeFormFragmentDirections.actionWelcomeFragmentToDocumentScanningFragment(
                             event.firstName,
                             event.lastName,
+                            event.birthDate,
                             navigationArgs.apiKey,
                             navigationArgs.groupId
                         ).apply {
