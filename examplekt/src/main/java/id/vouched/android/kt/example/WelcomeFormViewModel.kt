@@ -1,6 +1,9 @@
 package id.vouched.android.kt.example
-
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.map
 import id.vouched.android.kt.example.utils.EventWrapper
 
 class WelcomeFormViewModel : ViewModel() {
