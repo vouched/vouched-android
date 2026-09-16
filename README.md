@@ -1,541 +1,437 @@
-# Vouched
+# Vouched Android SDK
 
-[![GitHub release](https://img.shields.io/github/release/vouched/vouched-android.svg?maxAge=60)](https://github.com/vouched/vouched-android/releases)
-[![License](https://img.shields.io/github/license/vouched/vouched-android)](https://github.com/vouched/vouched-android/blob/master/LICENSE)
-
-## Run Example
-
-Clone this repo and change directory to _example_
-
-```shell
-git clone https://github.com/vouched/vouched-android
-
-cd vouched-android/example
-```
-
-Then, follow steps listed on the [example README](https://github.com/vouched/vouched-android/blob/master/example/README.md)
+Identity verification SDK for Android. Drop-in flow that handles document capture, face capture with liveness, and submission to the Vouched backend.
 
 ## Prerequisites
 
-- An account with Vouched
-- Your Vouched Public Key
+- A [Vouched account](https://app.vouched.id) with an active API key. If you don't have one, contact your Vouched representative.
+- *Optional, for enhanced ID capture:* enhanced document detection reads documents faster and more reliably than the classic pipeline, and is licensed per application. To enable it, give your Vouched representative the application ID of every app that will run the SDK. Product flavors and an `applicationIdSuffix` each produce a separate application ID, and every one that ships has to be registered (for example `com.example.myapp` and `com.example.myapp.staging`).
 
-## Install
+  Until it is enabled, document capture runs the classic pipeline instead. Capture still works, and no code change is needed on your side once enhanced capture is turned on.
 
-#### Add the package to your existing project
+## Requirements
 
-```shell
-implementation 'id.vouched.android:vouched-sdk:1.2.0'
-```
+- Android SDK 26+ (Android 8.0+)
+- Compile SDK: 36 (Android 16)
+- Target SDK: 36 (Android 16)
+- Kotlin 2.2.21+
+- Android Gradle Plugin 8.12.3+
+- Core library desugaring enabled (see [Installation](#installation))
+- A Vouched API key (contact your Vouched representative)
 
-#### (Optional) Add barcode scanning
-In order to use [BarcodeDetect](#barcodedetect), you must add [ML Kit Barcode Scanner](https://developers.google.com/ml-kit/vision/barcode-scanning/android).  
-Note: you can choose between the bundled and unbundled model. Our experience is that the bundled model provides  more accurate barcode scans. See the above ML Kit link for more information
+## Features
 
-```shell
+- Document capture (front, back, and full ID) with automatic detection
+- Face capture with liveness verification
+- Drop-in Jetpack Compose flow that drives the entire verification flow end to end
+- Multiple flow types: ID only, full ID verification (ID + face), re-verification, and selfie verification
+- Customizable result handling (success, cancelled, error)
+- Optional custom instruction screens before ID and face stages
+- Optional error and stage-change callbacks
+- Built with Kotlin Multiplatform for maximum compatibility
 
-// Use this dependency to bundle the model with your app
-implementation 'com.google.mlkit:barcode-scanning:17.0.2'  
+## Installation
 
-// Use this dependency to use the dynamically downloaded model in Google Play Services
-implementation 'com.google.android.gms:play-services-mlkit-barcode-scanning:18.0'
-```
+Add the dependency to your app's `build.gradle.kts`:
 
-#### (Optional) Add face detection
-In order to use [FaceDetect](#facedetect), you must add [ML Kit Face Detection](https://developers.google.com/ml-kit/vision/face-detection/android).  
-Note: you can choose between the bundled and unbundled model. The unbundled model will provide a smaller app footprint, but will require connectivity to download the model when verification is run or when the app is first installed. 
-
-```shell
-
-// Use this dependency to bundle the model with your app
-implementation 'com.google.mlkit:face-detection:16.1.4'  
-
-// Use this dependency to use the dynamically downloaded model in Google Play Services
-implementation 'com.google.android.gms:play-services-mlkit-face-detection:17.0.0'
-```
-
-## Getting Started
-
-This section will provide a _step-by-step_ path to understand the Vouched SDK through the Example.
-
-0. [Get familiar with Vouched](https://docs.vouched.id/#section/Overview)
-
-0. [An overview of SDK components](https://github.com/vouched/vouched-android/blob/master/SDKOverview.md)
-
-1. [Run the Example](#run-example)
-   - Go through the verification process but stop after each step and take a look at the logs. Particularly understand the [Job](https://docs.vouched.id/#tag/job-model) data from each verification step.
-   ```java
-   System.out.println(job.toJson());
-   ```
-   - Once completed, take a look at the [Job details on your Dashboard](https://docs.vouched.id/#section/Dashboard/Jobs)
-   
-2. Modify the Listeners
-
-   - Locate the [JobResponseListener](#jobresponselistener) in each Activity and make modifications.
-
-     - Add custom logic to display data or control the navigation
-   - Locate the [CardDetectResultListener](#carddetectresultlistener) and [FaceDetectResultListener](#facedetectresultlistener) and add logging
-   
-3. Tweak CameraX settings  
-   Better images lead to better results from Vouched AI
-   
-4. You are ready to integrate Vouched SDK into your app
-
-## SDK Reference
-
-### VouchedCameraHelper
-
-This class is introduced to make it easier for developers to integrate VouchedSDK and provide the optimal photography. The helper takes care of configuring the capture session, input, and output. Helper has following detection modes: 'ID' | 'FACE' | 'BARCODE' | 'ID_BACK'. 
-
-##### Initialize
-
-```java
-VouchedCameraHelper cameraHelper = new VouchedCameraHelper(this, this, ContextCompat.getMainExecutor(this), previewView, VouchedCameraHelper.Mode.ID, new VouchedCameraHelperOptions.Builder()
-                .withCardDetectOptions(new CardDetectOptions.Builder()
-                        .withEnableDistanceCheck(false)
-                        .withEnhanceInfoExtraction(false)  
-                        .withEnableOrientationCheck(false)
-                        .build())
-                .withCardDetectResultListener(this)
-                .withBarcodeDetectResultListener(this)
-                .withCameraFlashDisabled(true)
-                .withTimeOut(3000, timeoutListener)
-                .build());
-```
-
-| Parameter Type                      | Nullable |
-| --------------                      | :------: |
-| android.content.Context             |  false   |
-| androidx.lifecycle.LifecycleOwner   |  false   |
-| java.util.concurrent.Executor       |  false   |
-| androidx.camera.view.PreviewView    |  false   |
-| [VouchedCameraHelper.Mode](#vouchedcamerahelpermode)          |  false   |
-| [VouchedCameraHelper.Options](#vouchedcamerahelperoptions)          |  false   |
-
-
-**Enhanced ID Info Extraction**
-The camera helper can increase your verification abilities by recognizing additional sources of information based on the type of ID that your user submits.  You can enable this behavior by using  ```.withEnhanceInfoExtraction(true)``` when you create the camera helper.
-
-Once enabled, the helper can help guide the ID verification modes by processing job results returned by the Vouched api service, and generating the appropriate modes that are needed to complete ID verification. 
-
-In terms of workflow, once the front ID has been imaged and uploaded, the Vouched service identifies the type if ID that is being used, and returns as part of response a  JobResult object  that informs the SDK as to other data extraction actions that may be taken. These additional actions can include extractions of data from one or more barcodes or capturing an image of the back of the ID for firther analysis.
-
-In the current release, some coding is necessary  - in your JobResponseListener callback, you first must verify that the job has no errors or insights (user feedback that requires more actions on the user's part before leaving a mode). If that proves to be true, pass the camera helper the results object and determine the next mode. Since you know what the next mode will be, this is a great point to dispay a dialog or provide other feedback to the user as to inform them as what to expect next.
-
-
-onJobResonse changes:
-
-```
-// after verifying errors and insights, determine if the 
-// ID requires other processing 
-cameraHelper.updateDetectionModes(job.getResult());
-// advance the mode to the next state.
-VouchedCameraHelper.Mode next = cameraHelper.getNextMode();
-// give the user feedback based on the next step
-```
-
-onCardDetectResult changes for back/frontside detection:
-
-```
-VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
-if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
-    session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
-} else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-    session.postBackId(this, cardDetectResult, null, this);
+```kotlin
+dependencies {
+    implementation("id.vouched.android:vouched-sdk-android:2.0.0")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 ```
 
-**Note:** The DetectorActivityWithHelper class in the example app shows how enhanced extraction can be implemented. 
+The SDK requires [core library desugaring](https://developer.android.com/studio/write/java8-support#library-desugaring). Enable it in your app's `android` block:
 
-**Enabling distance check**
-
-The camera helper can find for an ideal distance to capture the photo of the document by using ```.withEnableDistanceCheck(true)``` when setting you create the camera helper.
-
-When this is enabled, the helper will guide us through instructions (passed through an [OnDetectResultListener](#carddetectresultlistener) set by ```VouchedCameraHelperOptions.Builder.withCardDetectResultListener(OnDetectResultListener cardDetectResultListener)``` ) so that the user can move near or far his document from the camera.
-
-
-**Enabling orientation check**
-
-The camera helper can assist in guiding the user to an ideal ID document orientation by using ```.withEnableOrientationCheck(true)``` when setting you create the camera helper.
-
-When this is enabled, the helper will guide the user through instructions (passed through an [OnDetectResultListener](#carddetectresultlistener) set by ```VouchedCameraHelperOptions.Builder.withCardDetectResultListener(OnDetectResultListener cardDetectResultListener)``` ), so that the user can rotate their ID document to match the desired orientation.
-
-**Adding a timeout to ID scan**
-
-It is possible to set a timeout for how long to wait until an ID is captured, by using ```VouchedCameraHelperOptions.Builder.withTimeOut(Long timeInMilliseconds, TimeoutListener listener)```  (see [TimeoutListener](#TimeoutListener)).  When the timer expires the helper will stop looking for the ID, at which point it is possible to give the user the option to retry using ```vouchedCameraHelperInstance.clearAndRestartTimeout()```  or to manually capture the photo of his document using ```vouchedCameraHelperInstance.capturePhoto(imageCaptureListener)``` (see [ImageCaptureListener](#ImageCaptureListener)).
-
-### CameraX
-
-We recommend using [CameraX](https://developer.android.com/training/camerax) with the Vouched SDK. The references will all use CameraX, and in the case of the VouchedCameraHelper, the CameraX apis are a dependency of that component.
-
-### VouchedSession
-
-This class handles a user's Vouched session. It takes care of the API calls. Use one instance for the duration of a user's verification session.
-
-##### Initialize
-
-```java
-VouchedSession session = new VouchedSession("PUBLIC_KEY");
-```
-
-| Parameter Type | Nullable |
-| -------------- | :------: |
-| String         |  false   |
-
-##### Initializing with token
-```java
-VouchedSession session = new VouchedSession("PUBLIC_KEY", new VouchedSessionParameters.Builder().withToken("TOKEN").build());
-```
-
-##### POST Front Id image
-
-```java
-session.postFrontId(this, cardDetectResult, new Params.Builder(), this);
-```
-
-| Parameter Type                              | Nullable |
-| ------------------------------------------- | :------: |
-| android.content.Context                     |  false   |
-| [CardDetectResult](#carddetectresult)       |  false   |
-| [ParamsBuilder](#paramsbuilder)             |   true   |
-| [JobResponseListener](#jobresponselistener) |  false   |
-
-##### POST Selfie image
-
-```java
-session.postFace(this, faceDetectResult, new Params.Builder(), this);
-```
-
-| Parameter Type                              | Nullable |
-| ------------------------------------------- | :------: |
-| android.content.Context                     |  false   |
-| [FaceDetectResult](#facedetectresult)       |  false   |
-| [ParamsBuilder](#paramsbuilder)             |   true   |
-| [JobResponseListener](#jobresponselistener) |  false   |
-
-##### POST confirm verification
-
-```javascript
-session.confirm(this, null, this);
-```
-
-| Parameter Type                              | Nullable |
-| ------------------------------------------- | :------: |
-| android.content.Context                     |  false   |
-| [ParamsBuilder](#paramsbuilder)             |   true   |
-| [JobResponseListener](#jobresponselistener) |  false   |
-
-### CardDetect
-
-This class handles detecting an ID (cards and passports) and performing necessary steps to ensure image is POSTABLE.
-
-##### Initialize
-
-```java
-CardDetect cardDetect = new CardDetect(getAssets(), new CardDetectOptions.Builder().withEnableDistanceCheck(true)
-                           .withEnhanceInfoExtraction(false)build(), this);
-```
-
-| Parameter Type                                                 | Nullable |
-| -------------------------------------------------------------- | :------: |
-| android.content.res.AssetManager                               |  false   |
-| [CardDetectOptions](#carddetectoptions)                        |  false   |
-| [CardDetect.OnDetectResultListener](#carddetectresultlistener) |  false   |
-
-##### Process Image
-
-```java
-cardDetect.processImageProxy(imageProxy, handler);
-```
-
-| Parameter Type                  | Nullable |
-| ------------------------------- | :------: |
-| androidx.camera.core.ImageProxy |  false   |
-| android.os.Handler              |  false   |
-
-### BarcodeDetect
-
-This class handles detecting the encoded barcode data. Only applicable for ID and DL cards.
-
-##### Initialize
-
-```java
-BarcodeDetect barcodeDetect = new BarcodeDetect(assetManager, barcodedetectresultlistener);
-```
-
-| Parameter Type                                                        | Nullable |
-|-----------------------------------------------------------------------| :------: |
-| android.content.res.AssetManager                                      |  false   |
-| [BarcodeDetect.OnBarcodeResultListener](#barcodedetectresultlistener) |  false   |
-
-##### Process Image
-
-```java
-cardDetect.findBarcode(imageProxy, handler);
-```
-
-| Parameter Type                  | Nullable |
-|---------------------------------| :------: |
-| androidx.camera.core.ImageProxy |  false   |
-| android.os.Handler              |  false   |
-
-### FaceDetect
-
-This class handles detecting a face and performing necessary steps to ensure image is POSTABLE.
-
-##### Initialize
-
-```java
-FaceDetect faceDetect = new FaceDetect(this, new FaceDetectOptions.Builder().withLivenessMode(LivenessMode.DISTANCE).build(), this);
-```
-
-| Parameter Type                                                 | Nullable |
-| -------------------------------------------------------------- | :------: |
-| android.content.Context                                        |  false   |
-| [FaceDetectOptions](#facedetectoptions)                        |  false   |
-| [FaceDetect.OnDetectResultListener](#facedetectresultlistener) |  false   |
-
-##### Process Image
-
-```java
-faceDetect.processImageProxy(imageProxy, graphicOverlay);
-```
-
-| Parameter Type                  | Nullable |
-| ------------------------------- | :------: |
-| androidx.camera.core.ImageProxy |  false   |
-| GraphicOverlay                  |   true   |
-
-### Types
-
-##### CardDetectResult
-
-The output from [Card Detection](#carddetect) and used to submit an ID. 
-**Note** that CardDetectResults can arise from scanning the font or back of certain ID documents. It is currently the responsibility of the card detection callback to keep track of the mode the helper is in, and post to the correct endpoint. A future update will remove this requirement.
-
-```java
-class CardDetectResult {
-    public Step getStep() { ... }
-
-    public Instruction getInstruction() { ... }
-
-    public String getImage() { ... }
-
-    public String getDistanceImage() { ... }
+```kotlin
+android {
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+    }
 }
 ```
 
-An example of handling front and back ID images in a card detection callback:
+Make sure you have Maven Central in your repositories:
 
-```
-VouchedCameraHelper.Mode currentMode = cameraHelper.getCurrentMode();
-if(currentMode.equals(VouchedCameraHelper.Mode.ID)) {
-    session.postFrontId(this, cardDetectResult, new Params.Builder().withFirstName(inputFirstName).withLastName(inputLastName), this);
-} else if(currentMode.equals(VouchedCameraHelper.Mode.ID_BACK)) {
-    session.postBackId(this, cardDetectResult, null, this);
+```kotlin
+repositories {
+    google()
+    mavenCentral()
 }
 ```
 
-##### VouchedCameraHelperMode
+## Permissions
 
-An enum to provide detection modes for [VouchedCameraHelper](#vouchedcamerahelper) 
+Add the required permissions to your `AndroidManifest.xml`:
 
-```java
-enum Mode {
-        ID,
-        BARCODE,
-        ID_BACK,
-        FACE,
-        COMPLETED
+```xml
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+```
+
+Request camera permission at runtime (Android 6.0+) using the standard Android runtime permission APIs. The SDK's default capture screens handle the runtime permission request for you.
+
+## Quick Start
+
+The SDK initializes itself automatically the first time a flow starts — no manual initialization call is required. You only need to configure the session and launch the flow.
+
+### 1. Configure the Session and Launch the Flow
+
+Use the Vouched Flow API in your Activity:
+
+```kotlin
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import id.vouched.sdk.SessionImp
+import id.vouched.sdk.VouchedSDK
+import id.vouched.sdk.models.AppConfig
+import id.vouched.sdk.models.FlowType
+import id.vouched.sdk.models.SessionParams
+import id.vouched.sdk.models.FlowResult
+import id.vouched.sdk.ui.flow.VouchedFlow
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Configure the session
+        val appConfig = AppConfig(
+            type = FlowType.IDV,
+            sessionParams = SessionParams(
+                apiKey = "YOUR_VOUCHED_API_KEY"
+            )
+        )
+
+        // Create session
+        val session = SessionImp(appConfig)
+
+        // Build the flow
+        val flowBuilder = VouchedSDK
+            .createFlow(appConfig)
+            .onFlowComplete { result ->
+                when (result) {
+                    is FlowResult.Success -> {
+                        // Handle success: result.job contains verification details
+                        println("Verification complete: ${result.job.id}")
+                    }
+                    is FlowResult.Cancelled -> {
+                        // Handle cancellation
+                        println("Cancelled: ${result.reason}")
+                    }
+                    is FlowResult.Error -> {
+                        // Handle error
+                        println("Error: ${result.message}")
+                    }
+                }
+            }
+
+        setContent {
+            VouchedFlow(
+                session = session,
+                flowBuilder = flowBuilder
+            )
+        }
+    }
+}
+```
+
+### 2. (Optional) Custom instruction screens
+
+Show your own Compose screens before the ID and face capture stages:
+
+```kotlin
+import id.vouched.sdk.ui.flow.customComposeScreen
+
+val flowBuilder = VouchedSDK
+    .createFlow(appConfig)
+    .withIdStageInstructionsScreen(
+        provider = customComposeScreen { onContinue ->
+            IdInstructionScreen(onContinue = onContinue)
+        }
+    )
+    .withFaceStageInstructionsScreen(
+        provider = customComposeScreen { onContinue ->
+            FaceInstructionScreen(onContinue = onContinue)
+        }
+    )
+    .onFlowComplete { result ->
+        // Handle result
     }
 ```
 
-##### VouchedCameraHelperOptions
+Example instruction screen:
 
-List of options to alter image processing for [VouchedCameraHelper](#vouchedcamerahelper)
-
-```java
-    VouchedCameraHelperOptions cameraOptions = new VouchedCameraHelperOptions.Builder()
-                .withFaceDetectOptions(new FaceDetectOptions.Builder()
-                        .withLivenessMode(LivenessMode.MOUTH_MOVEMENT)
-                        .build())
-                .withFaceDetectResultListener(this)
-                .build());
-
-```
-
-##### BarcodeDetectResult
-
-The output from [Barcode Detection](#barcodedetect) and used to submit the encoded Barcode data.
-
-```java
-class BarcodeResult {
-    public String getValue() { ... }
-
-    public String getImage() { ... }
-}
-```
-
-##### FaceDetectResult
-
-The output from [Face Detection](#facedetect) and used to submit a Selfie.
-
-```java
-class FaceDetectResult {
-    public Step getStep() { ... }
-
-    public Instruction getInstruction() { ... }
-
-    public String getImage() { ... }
-
-    public String getUserDistanceImage() { ... }
-}
-```
-
-##### ParamsBuilder
-
-The builder for the parameters that are used to submit a Job.
-
-```java
-class Builder {
-    public Builder withFirstName(String firstName) { ... }
-
-    public Builder withLastName(String lastName) { ... }
-
-    public Builder withIdPhoto(String idPhoto) { ... }
-
-    public Builder withUserPhoto(String userPhoto) { ... }
-
-    public Builder withUserDistancePhoto(String userDistancePhoto) { ... }
-
-    public Builder withIdDistancePhoto(String idDistancePhoto) { ... }
-
-    public Params build() { ... }
-}
-```
-
-##### JobResponseListener
-
-The listener to retrieve the [Job](https://docs.vouched.id/#tag/job-model) data from the submission.
-
-```java
-public interface OnJobResponseListener {
-    void onJobResponse(JobResponse response);
-}
-```
-
-Follow the below template
-
-```java
-@Override
-public void onJobResponse(JobResponse response) {
-    if (response.getError() != null) {
-        // handle app/network/system errors
-    } else { // see if there are recoverable job errors
-      Job job = response.getJob();
-      List<Insight> insights = VouchedUtils.extractInsights(response.getJob());
-      // inform the user of the error extracted
+```kotlin
+@Composable
+fun IdInstructionScreen(onContinue: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Please have your ID ready")
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(onClick = onContinue) {
+            Text("Start ID Capture")
+        }
     }
-    // implement business and navigation logic based on Job data
 }
 ```
 
-##### CardDetectOptions
+### 3. (Optional) Error and stage-change callbacks
 
-The options for [Card Detection](#carddetect).
+In addition to `onFlowComplete`, the flow builder exposes callbacks for errors and stage transitions:
 
-```java
-class Builder {
-    public Builder withEnableDistanceCheck(boolean enableDistanceCheck) { ... }
-    public Builder withEnhanceInfoExtraction(boolean enableEnhancedIdScan) { ... }
-    public Builder withEnableOrientationCheck(boolean enableOrientationCheck) { ... }
+```kotlin
+val flowBuilder = VouchedSDK
+    .createFlow(appConfig)
+    .onStageChange { from, to ->
+        // Track user progress through the flow stages
+        Log.d("Vouched", "Stage changed: $from -> $to")
+    }
+    .onError { error ->
+        // Called before the flow completes with FlowResult.Error
+        Log.e("Vouched", "Flow error", error)
+    }
+    .onFlowComplete { result ->
+        // Handle result
+    }
+```
 
-    public CardDetectOptions build() { ... }
+### 4. (Optional) Enable analytics tracking
+
+We recommend enabling anonymous analytics. It lets Vouched diagnose verification failures in your integration, which is the fastest path to a resolution when you raise a support ticket:
+
+```kotlin
+val flowBuilder = VouchedSDK
+    .createFlow(appConfig)
+    .withTrackingConsent(true)
+    .onFlowComplete { result -> /* ... */ }
+```
+
+### 5. (Optional) Update tracking consent at runtime
+
+If you already know the flow's `trackingConsent` before starting it, use `withTrackingConsent` (above). To update consent after the flow has started (for example, from your app's privacy settings), use the global API:
+
+```kotlin
+import id.vouched.sdk.Vouched
+
+// Call when the user grants or revokes consent in your privacy settings
+Vouched.setTrackingConsent(true) // or false
+```
+
+## Flow Types
+
+The SDK supports four flow types, configured via [`AppConfig.type`]:
+
+| FlowType               | Description                                              | Stages                                      |
+|------------------------|----------------------------------------------------------|---------------------------------------------|
+| `ID`                   | ID document capture only                                 | ID → Done                                   |
+| `IDV`                  | Full identity verification (ID + face with liveness)     | ID → Face → Done                            |
+| `REVERIFY`             | Re-verification (face only)                              | Face → Done                                 |
+| `SELFIE_VERIFICATION`  | Selfie verification only                                 | Face → Done                                 |
+
+## Session Configuration
+
+### SessionParams
+
+[`SessionParams`] configures the API session:
+
+```kotlin
+val sessionParams = SessionParams(
+    apiKey = "YOUR_VOUCHED_API_KEY",          // Required
+    accountGroupSid = null,                    // Optional: account group identifier
+    authJobId = null,                          // Optional: authentication job reference
+    jobConfigId = null                         // Optional: backend job configuration
+)
+```
+
+### JobParams (user data)
+
+[`JobParams`] lets you pre-populate the user's data on the verification job. All fields are optional:
+
+```kotlin
+val appConfig = AppConfig(
+    type = FlowType.IDV,
+    sessionParams = SessionParams(apiKey = "YOUR_API_KEY"),
+    jobParams = JobParams(
+        firstName = "Jane",
+        lastName = "Doe",
+        email = "jane@example.com",
+        phone = "+15551234567",
+        birthDate = "1990-01-01",
+        enableIPAddress = true,                 // Collect the user's IP address
+        enablePhysicalAddress = true,           // Collect the user's physical address
+        enableDarkWeb = true,                   // Run a dark web data breach check
+        enableCrossCheck = true,                // Cross-check provided PII against the ID
+        enableDriversLicenseValidation = true   // Validate the driver's license number
+    )
+)
+```
+
+## Advanced Configuration
+
+### Document Capture Options
+
+```kotlin
+import id.vouched.sdk.capture.CaptureMethod
+import id.vouched.sdk.capture.ClassicDocumentDetectionOptions
+import id.vouched.sdk.capture.DocumentCaptureConfig
+import id.vouched.sdk.capture.DocumentCaptureOptions
+import id.vouched.sdk.capture.DocumentCaptureTuning
+import id.vouched.sdk.capture.DocumentDetectionMode
+
+val appConfig = AppConfig(
+    type = FlowType.IDV,
+    sessionParams = SessionParams(apiKey = "YOUR_API_KEY"),
+    documentCaptureConfig = DocumentCaptureConfig(
+        detectionMode = DocumentDetectionMode.CLASSIC_ONLY,
+        includeBackId = true,  // Capture both front and back
+        // Options specific to classic (platform-native) document detection.
+        classicDocumentDetectionOptions = ClassicDocumentDetectionOptions(
+            captureMethod = CaptureMethod.BOTH,   // CAMERA, UPLOAD, or BOTH
+            enableDistanceCheck = true,           // Front-ID distance challenge
+            tuning = DocumentCaptureTuning(
+                timeoutMs = 30_000,               // Capture timeout (null = no timeout)
+                holdSteadyDurationMs = 1_000      // Hold time before auto-capture (ms)
+            )
+        ),
+        // Capture-result acceptance options (confirmation, confidence gating).
+        options = DocumentCaptureOptions(
+            userImageConfirmation = true,
+            cardIDThreshold = 0.8
+        )
+    )
+)
+```
+
+- `detectionMode` chooses which detection pipeline runs (`ENHANCED_WITH_FALLBACK` or `CLASSIC_ONLY`). `ENHANCED_WITH_FALLBACK` tries enhanced detection first and falls back to classic detection if it is unavailable.
+- `includeBackId` captures the back of the ID after the front.
+- `classicDocumentDetectionOptions` configures the classic pipeline:
+  - `captureMethod`: `CAMERA` (live capture), `UPLOAD` (gallery only), or `BOTH`.
+  - `enableDistanceCheck`: runs the front-ID distance challenge (hold the ID farther away, then move closer).
+  - `tuning` ([`DocumentCaptureTuning`]): `timeoutMs` and `holdSteadyDurationMs` (stability hold time).
+- `options` ([`DocumentCaptureOptions`]) configures result acceptance:
+  - `userImageConfirmation`: shows a confirmation screen so the user can review/retake the captured image.
+  - `cardIDThreshold`: minimum backend ID confidence (0.0–1.0) required to progress; below it, the capture stage retries. `0.0` disables the gate.
+
+### Face Capture Options
+
+```kotlin
+import id.vouched.sdk.capture.CaptureMethod
+import id.vouched.sdk.capture.face.FaceCaptureConfig
+import id.vouched.sdk.capture.face.FaceDetectionMode
+import id.vouched.sdk.capture.face.FaceLivenessMode
+
+val appConfig = AppConfig(
+    type = FlowType.IDV,
+    sessionParams = SessionParams(apiKey = "YOUR_API_KEY"),
+    faceCaptureConfig = FaceCaptureConfig(
+        detectionMode = FaceDetectionMode.ENHANCED_WITH_FALLBACK,
+        timeoutMs = 30_000,                    // Capture timeout (null = no timeout)
+        livenessMode = FaceLivenessMode.STRAIGHT,  // MOUTH_MOVEMENT, DISTANCE, ORIENTATION, or STRAIGHT
+        selfieThreshold = 0.0,                 // Min backend selfie confidence to progress (0.0 disables)
+        captureMethod = CaptureMethod.CAMERA   // CAMERA, UPLOAD, or BOTH
+    )
+)
+```
+
+- `detectionMode`: `ENHANCED_WITH_FALLBACK` (enhanced liveness first, falling back to classic) or `CLASSIC_ONLY` (platform-native detection).
+- `timeoutMs`: if no suitable image is captured within this time, the flow lets the user take a photo manually. `null` disables the timeout.
+- `livenessMode`: which liveness challenge to run (`MOUTH_MOVEMENT`, `DISTANCE`, `ORIENTATION`, `STRAIGHT`).
+- `selfieThreshold`: minimum confidence (0.0–1.0) required on the selfie result returned by the backend; below it, the capture stage retries. `0.0` disables the gate.
+- `captureMethod`: `CAMERA` (live capture), `UPLOAD` (gallery only), or `BOTH`.
+
+## Reading the Result
+
+When the flow completes with `FlowResult.Success`, `result.job` is an [`APIJobResponse`] containing the full verification result:
+
+```kotlin
+is FlowResult.Success -> {
+    val job = result.job
+    println("Job id: ${job.id}")
+    println("Status: ${job.status}")
+    println("Success: ${job.result.success}")
+    println("Success with suggestion: ${job.result.successWithSuggestion}")
+    println("Face match confidence: ${job.result.confidences?.faceMatch}")
+    println("ID confidence: ${job.result.confidences?.id}")
+    println("ID quality confidence: ${job.result.confidences?.idQuality}")
+    // job.result also exposes parsed fields: firstName, lastName, birthDate,
+    // expireDate, idAddress, crosscheck, aamva, etc.
 }
 ```
 
-##### CardDetectResultListener
+Key fields of `APIJobResponse`:
 
-The listener to retrieve [CardDetectResult](#carddetectresult).
+- `id` — the verification job identifier.
+- `token` — the session token for this job.
+- `status` — current job status.
+- `result` ([`JobResult`]) — `success`, `successWithSuggestion`, parsed ID fields, and `confidences`:
+  - `confidences` ([`Confidence`]) — `faceMatch`, `idMatch`, `idQuality`, `selfie`, `idExpired`, and more.
+- `signals` — list of insights/warnings from the backend.
 
-```java
-interface OnDetectResultListener {
-    void onCardDetectResult(CardDetectResult cardDetectResult);
-}
+## Error Handling
+
+The flow can complete with three result types (see [Quick Start](#quick-start)):
+
+- `FlowResult.Success(job)` — verification completed.
+- `FlowResult.Cancelled(reason)` — the user (or an interceptor) cancelled the flow; `reason` is optional.
+- `FlowResult.Error(error, message)` — the flow failed. `error` is the underlying `Throwable`; `message` is a human-readable description.
+
+Additional error behavior:
+
+- **Invalid API key:** the SDK validates the API key at flow startup and surfaces an [`ApiKeyValidationException`] via the `onError` callback; the initialization stage shows a retry screen.
+- **Initialization failures:** if SDK initialization or job creation fails, the flow shows a retry screen with the error message before completing with an error result.
+- **Use `onError` for logging:** the `onError` callback fires before the flow completes with `FlowResult.Error`, so you can log or track the failure there and still handle the terminal state in `onFlowComplete`.
+
+```kotlin
+val flowBuilder = VouchedSDK
+    .createFlow(appConfig)
+    .onError { error ->
+        Log.e("Vouched", "Flow failed", error)
+    }
+    .onFlowComplete { result ->
+        when (result) {
+            is FlowResult.Success -> { /* ... */ }
+            is FlowResult.Cancelled -> { /* ... */ }
+            is FlowResult.Error -> { /* ... */ }
+        }
+    }
 ```
 
-##### BarcodeDetectResultListener
+## Sample App
 
-The listener to retrieve [BarcodeDetectResult](#barcodedetectresult).
+This repository includes a working sample app under `sample/android/` that demonstrates the full integration.
 
-```java
-interface OnBarcodeResultListener {
-    void onBarcodeResult(BarcodeResult barcodeResult);
-}
+### Setup the Sample App
+
+1. Clone this repository
+2. Open `sample/android/` in Android Studio
+3. Create a `local.properties` file in the repository root (see `local.properties.example`) and add your Vouched API key:
+
+```properties
+VOUCHED_API_KEY=your_actual_api_key
 ```
 
-##### TimeoutListener
+4. Sync and run the project on a physical device (camera required)
 
-Listener to know when the timeout has expired when a document is being scanned, when this is executed the helper stops searching for documents or barcodes.
+### Run
 
-```java
-interface TimeoutListener {
-    void onTimeout();
-}
-```
+Build and run on a physical Android device. Camera access is required for ID and face capture; some features may not work properly on emulators.
 
-##### ImageCaptureListener
+## Versioning
 
-listener to know when a photo has been captured manually
+This SDK follows Semantic Versioning. Each tagged release on this repository corresponds to one published AAR, hosted on Maven Central.
 
-```java
-interface ImageCaptureListener {
-   void onImageCapture(Bitmap bitmap);
-}
-```
+## Support
 
-##### FaceDetectOptions
+- Documentation: https://docs.vouched.id
+- Contact: support@vouched.id
 
-The options for [Face Detection](#facedetect).
+## License
 
-```java
-public enum LivenessMode {
-    MOUTH_MOVEMENT,
-    DISTANCE,
-    BLINKING,
-    NONE
-}
-```
-
-
-
-```java
-class Builder {
-    public Builder withLivenessMode(LivenessMode livenessMode) { ... }
-
-    public FaceDetectOptions build() { ... }
-}
-```
-
-##### FaceDetectResultListener
-
-The listener to retrieve [FaceDetectResult](#facedetectresult).
-
-```java
-interface OnDetectResultListener {
-    void onFaceDetectResult(FaceDetectResult faceDetectResult);
-}
-```
-
-##### RetryableError
-
-An enum to provide an optional baseline of Verification Error(s) for a given Job.
-
-```java
-enum RetryableError {
-    InvalidIdPhotoError,
-    InvalidUserPhotoError,
-    BlurryIdPhotoError,
-    GlareIdPhotoError
-}
-```
+Apache 2.0 — see [LICENSE](LICENSE) for details.
