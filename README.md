@@ -17,6 +17,7 @@ Identity verification SDK for Android. Drop-in flow that handles document captur
 - Kotlin 2.2.21+
 - Android Gradle Plugin 8.12.3+
 - Core library desugaring enabled (see [Installation](#installation))
+- Jetpack Compose enabled (see [Installation](#installation))
 - A Vouched API key (contact your Vouched representative)
 
 ## Features
@@ -32,19 +33,37 @@ Identity verification SDK for Android. Drop-in flow that handles document captur
 
 ## Installation
 
-Add the dependency to your app's `build.gradle.kts`:
+Apply the Compose compiler plugin. Kotlin 2.0+ requires it to compile any `@Composable` code, including the `setContent { ... }` block in the Quick Start. In your app's `build.gradle.kts` the `plugins {}` block comes first:
 
 ```kotlin
-dependencies {
-    implementation("id.vouched.android:vouched-sdk-android:2.0.0")
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+plugins {
+    // Keep the version in sync with your Kotlin version.
+    alias(libs.plugins.composeCompiler) // org.jetbrains.kotlin.plugin.compose
 }
 ```
 
-The SDK requires [core library desugaring](https://developer.android.com/studio/write/java8-support#library-desugaring). Enable it in your app's `android` block:
+> If you don't use a Gradle version catalog, apply the plugin with its fully qualified id instead: `id("org.jetbrains.kotlin.plugin.compose") version "<your-kotlin-version>"`.
+
+Add the SDK, core library desugaring, and the Compose dependency the flow renders with:
+
+```kotlin
+dependencies {
+    implementation("id.vouched.android:vouched-sdk-android:2.0.1")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+
+    // The SDK uses Jetpack Compose internally but does not expose it transitively
+    // so declare the Compose artifacts your own code references.
+    implementation("androidx.activity:activity-compose:1.12.2")
+}
+```
+
+The SDK requires [core library desugaring](https://developer.android.com/studio/write/java8-support#library-desugaring). Enable it, and enable Compose, in your app's `android` block:
 
 ```kotlin
 android {
+    buildFeatures {
+        compose = true
+    }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
     }
@@ -435,3 +454,11 @@ This SDK follows Semantic Versioning. Each tagged release on this repository cor
 ## License
 
 Apache 2.0 — see [LICENSE](LICENSE) for details.
+
+## Migrating from v1
+
+If you were using the v1 SDK (`id.vouched.android:vouched-sdk`), see [MIGRATION.md](MIGRATION.md) for a full breakdown of what changed and how to upgrade.
+
+## Legacy SDK
+
+Looking for the v1.x SDK? See the [vouched-android repository](https://github.com/vouched/vouched-android).

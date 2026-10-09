@@ -12,7 +12,7 @@ This is a sample Android application demonstrating the Vouched Android SDK.
 
 - Android Studio Arctic Fox or later
 - JDK 21
-- Android SDK 24+ (minimum)
+- Android SDK 26+ (minimum)
 - Android SDK 36 (target)
 
 ## Running
